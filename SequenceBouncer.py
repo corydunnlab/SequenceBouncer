@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-
 # Funding received from the Sigrid Jusélius Foundation contributed to the development of this software.
 # Author: Cory Dunn
 # Institution: University of Helsinki
 # Author Email: cory.dunn@helsinki.fi
-# Version: 1.16
-version = '1.16'
+# Version: 1.17-A
+version = '1.17-A'
 # License: GPLv3
 
 from Bio import AlignIO #import AlignIO package
@@ -18,15 +17,16 @@ import numpy as np #import numpy
 import time #import time
 import sys
 import argparse
-import matplotlib.pyplot as plt
-from matplotlib import rcParams
-rcParams['font.family'] = 'sans-serif'
-rcParams['font.sans-serif'] = ['Arial']
+#import matplotlib.pyplot as plt
+#from matplotlib import rcParams
+#rcParams['font.family'] = 'sans-serif'
+#rcParams['font.sans-serif'] = ['Arial']
 import gc
 
 print('\nSequenceBouncer: A method to remove outlier entries from a multiple sequence alignment\n')
 print('Cory Dunn')
 print('University of Helsinki')
+print('cory.dunn@helsinki.fi')
 print('Version: ' + version +'\n')
 
 # Load files, receive parameters, and provide assistance
@@ -35,10 +35,10 @@ ap = argparse.ArgumentParser()
 ap.add_argument('-i','--input_file',required=True,type=str,help='Input file in FASTA format.\n')
 ap.add_argument('-o','--output_file',required=False,type=str,default='X',help="Output filename [do not include extensions] (Default will be 'input_file.ext').\n")
 ap.add_argument('-g','--gap_percent_cut',required=False,type=float,default=2.0,help='For columns with a greater fraction of gaps than the selected value (expressed in percent), data will be ignored in calculations (Default is 2).\n')
-ap.add_argument('-k','--IQR_coefficient',required=False,type=float,default=1.0,help='k-factor beyond the interquartile range within a trial that defines an outlier sequence (Default is 1.0).\n')
+ap.add_argument('-k','--IQR_coefficient',required=False,type=float,default=1.0,help='Coefficient multiplied by the interquartile range that helps to define an outlier sequence (Default is 1.0).\n')
 ap.add_argument('-n','--subsample_size',required=False,type=int,default=0,help='|> Available for large alignments | The size of a single sample taken from the full dataset (Default is entire alignment, but try a subsample size of 50 or 100 for large alignments).\n')
 ap.add_argument('-t','--trials',required=False,type=int,default=1,help='|> Available for large alignments | Number of times each sequence is sampled and tested (Default is to examine all sequences in one single trial, but 5 or 10 trials may work well when subsamples are taken from large alignments).\n')
-ap.add_argument('-s','--stringency',required=False,type=int,default=2,help='|> Available for large alignments | 1: Minimal stringency. 2: Moderate stringency. 3: Maximum stringency. (Default is 2).\n')
+ap.add_argument('-s','--stringency',required=False,type=int,default=2,help='|> Available for large alignments | 1: Minimal stringency. 2: Moderate stringency. 3: Maximum stringency. (Default is moderate stringency).\n')
 
 args = vars(ap.parse_args())
 input_sequence = args['input_file']
@@ -83,8 +83,6 @@ entropy_array[:] = np.nan
 
 record_sequence_trial_results = pd.DataFrame(alignment_record_name_list, columns=['Accession'])
 
-print("Alignment depth is: " + str(depth_of_alignment) + " sequences.")
-
 if number_in_small_test == 0:
     number_in_small_test = depth_of_alignment
 
@@ -103,6 +101,7 @@ length_of_alignment = len(list(record.seq))
 gap_array = np.zeros((depth_of_alignment,length_of_alignment))
 
 print('Alignment length is: ' + str(int(gap_array.size/depth_of_alignment)) + ' characters.')
+print("Alignment depth is: " + str(depth_of_alignment) + " sequences.")
 
 # test gap percentage at different alignment positions
 
@@ -133,11 +132,10 @@ gap_value_cutoff_float = float(gap_value_cutoff/100)
 gap_percent_bool_series_remove = gap_percent > gap_value_cutoff_float
 
 gap_percent_bool_index_remove = gap_percent_bool_series_remove[gap_percent_bool_series_remove].index
-print("Elapsed time: ~ " + str(int(time.time() - start_time)) + " seconds.")
-print('Starting sequence length: ' + str(length_of_alignment))
+
 print('Positions analyzed after ' + str(gap_value_cutoff) + '% gap cutoff: ' + str(length_of_alignment-len(gap_percent_bool_index_remove)))
 
-comparison_time_full_table_seconds = depth_of_alignment * depth_of_alignment * (length_of_alignment-len(gap_percent_bool_index_remove)) * 4.5E-8
+comparison_time_full_table_seconds = depth_of_alignment * depth_of_alignment * (length_of_alignment-len(gap_percent_bool_index_remove)) * 3.14E-8
 if comparison_time_full_table_seconds > 1800 and number_in_small_test == depth_of_alignment:
     print('\n***WARNING: An input alignment of this size may take a considerable amount of time')
     print('   if all pairwise sequence comparisons are performed.')
@@ -206,13 +204,13 @@ entropylist_S = pd.Series(entropy_record)
 
 entropylist_S_gap_considered = entropylist_S.drop(gap_percent_bool_index_remove)
 max_entropy_before_gaps = pd.Series.max(entropylist_S)
-print('Maximum Shannon entropy score before gap % considered: ', f'{max_entropy_before_gaps: .2f}')
+print('Maximum Shannon entropy alignment score before gap % considered: ', f'{max_entropy_before_gaps: .2f}')
 max_entropy_after_gaps = pd.Series.max(entropylist_S_gap_considered)
-print('Maximum Shannon entropy score after gap % considered: ', f'{max_entropy_after_gaps: .2f}')
+print('Maximum Shannon entropy alignment score after gap % considered: ', f'{max_entropy_after_gaps: .2f}')
 
 entropy_record_numpy = entropylist_S_gap_considered.to_numpy()
 entropy_record_numpy.shape = (-1,len(entropylist_S_gap_considered))
-print("Elapsed time: ~ " + str(int(time.time() - start_time)) + " seconds.")
+
 print('Preparing sequences for comparison.')
 
 # load sequences from alignment into list and control case
@@ -226,13 +224,10 @@ for record_x in SeqIO.parse(input_sequence,"fasta"):
     record_x_toward_seq_dataframe_ASCII = [ord(x) for x in record_x_toward_seq_dataframe_lower]
     sequence_records.append(record_x_toward_seq_dataframe_ASCII)
 
-print("Elapsed time: ~ " + str(int(time.time() - start_time)) + " seconds.")
-
 #generate dataframe of alignment from list
 
 print('Generating sequence dataframe.')
 sequence_dataframe = pd.DataFrame(sequence_records)
-print("Elapsed time: ~ " + str(int(time.time() - start_time)) + " seconds.")
 
 sequence_dataframe = sequence_dataframe.astype('int8')
 
@@ -247,7 +242,6 @@ print("Elapsed time: ~ " + str(int(time.time() - start_time)) + " seconds.")
 del sequence_records
 del sequence_dataframe
 gc.collect()
-print('Resetting memory.')
 
 # prepare dataframe for storage of trial results (these columns are stripped away later if only one trial is performed)
 
@@ -258,7 +252,7 @@ record_sequence_trial_results['Outlier_instances'] = 0
 print('Beginning sequence trials.')
 trial_count = 0
 
-#avoid empty source dataframe
+# avoid empty source dataframe
 
 if depth_of_alignment//number_in_small_test == depth_of_alignment/number_in_small_test:
     times_to_sample_max_keep = (depth_of_alignment//number_in_small_test)
@@ -383,21 +377,23 @@ if number_in_small_test == depth_of_alignment:
     first_column = entropy_DF.pop('Median_across_pairwise_comparisons')
     entropy_DF.insert(0,'Median_across_pairwise_comparisons',first_column)
     entropy_DF.to_csv(output_full_table)
+    
     # print figure describing trials
-    fig, ax = plt.subplots()
-    plt.figure(figsize=(8,8))
-    plt.xlabel('Sequence number within input file', fontsize=12)
-    plt.ylabel('Sequence number within input file', fontsize=12)
-    if depth_of_alignment < 2000:
-        plotlabels = [i+1 for i in range(0,(depth_of_alignment-1),50)]
-    if depth_of_alignment >= 2000:
-        plotlabels = [i+1 for i in range(0,(depth_of_alignment-1),500)]
-    plt.xticks(ticks=plotlabels,rotation=60)
-    plt.yticks(ticks=plotlabels)
-    plt.imshow(entropy_DF,cmap='cividis',interpolation='nearest')
-    plt.show
-    plt.colorbar()
-    plt.savefig(output_figure + '.pdf', dpi=600)
+    
+    #fig, ax = plt.subplots()
+    #plt.figure(figsize=(8,8))
+    #plt.xlabel('Sequence number within input file', fontsize=12)
+    #plt.ylabel('Sequence number within input file', fontsize=12)
+    #if depth_of_alignment < 2000:
+    #    plotlabels = [i+1 for i in range(0,(depth_of_alignment-1),50)]
+    #if depth_of_alignment >= 2000:
+    #    plotlabels = [i+1 for i in range(0,(depth_of_alignment-1),500)]
+    #plt.xticks(ticks=plotlabels,rotation=60)
+    #plt.yticks(ticks=plotlabels)
+    #plt.imshow(entropy_DF,cmap='cividis',interpolation='nearest')
+    #plt.show
+    #plt.colorbar()
+    #plt.savefig(output_figure + '.pdf', dpi=600)
 
 # prepare dataframe to generate FASTA files
 
@@ -479,7 +475,5 @@ record_sequence_trial_results.to_csv(output_tabular,index=False)
 
 print("Analysis complete.")
 print("Total time for analysis: ~ " + str(int(((time.time() - start_time))/(1+trial)*min_trials_for_each_sequence)) + " seconds.")
-
-
 
 # %%

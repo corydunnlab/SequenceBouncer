@@ -11,16 +11,16 @@ GPLv3
 ----
 **Acknowledgements:**
 Funding received from the **Sigrid Jusélius Foundation** contributed to the development of this software.
-Code utilized for Shannon entropy calculation, written by **Joe R. J. Healey**, University of Warwick (https://gist.github.com/jrjhealey/130d4efc6260dd76821edc8a41d45b6a) was modified and used under the GPLv3 license.
+Code utilized for Shannon entropy calculation, written by **Joe R. J. Healey**, University of Warwick (https://gist.github.com/jrjhealey/) was modified and used under the GPLv3 license.
 ----
 **Requirements:**
 SequenceBouncer is implemented in Python 3 (tested under version 3.8.6) 
 Dependencies: 
-Biopython (tested under version 1.78)
-Pandas (tested under version 1.1.3)
+Biopython (tested under version 1.78),
+Pandas (tested under version 1.1.3),
 Numpy (tested under version 1.19.1)
 ----
-Usage:
+**Usage:**
 SequenceBouncer_v1_16.py [-h] -i INPUT_FILE [-o OUTPUT_FILE] [-s STRINGENCY] [-k IQR_COEFFICIENT] [-t TRIALS] [-n SUBSAMPLE_SIZE] [-g GAP_PERCENT_CUT]
 
 Required arguments:
