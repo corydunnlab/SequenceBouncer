@@ -32,12 +32,11 @@ Optional arguments:
                         Output filename [do not include extensions] (Default will be 'input_file.ext').
 
   -s STRINGENCY, --stringency STRINGENCY
-                        1: Minimal stringency. 2: Moderate stringency. 3: Maximum stringency. (Default is 2).
+                        1: Minimal stringency. 2: Moderate stringency. 3: Maximum stringency. (Default is moderate stringency).
 
 
   -k IQR_COEFFICIENT, --IQR_coefficient IQR_COEFFICIENT
-                        k-factor beyond the interquartile range within a trial that defines an outlier sequence (Default is
-                        1).
+                        Coefficient multiplied by the interquartile range that helps to define an outlier sequence (Default is 1.0)..
 
   -t TRIALS, --trials TRIALS
                         Number of times each sequence is sampled and tested (Default is to examine all sequences in one single
