@@ -47,4 +47,15 @@ Optional arguments:
 
   -g GAP_PERCENT_CUT, --gap_percent_cut GAP_PERCENT_CUT
                         For columns with a greater fraction of gaps than the selected value (expressed in percent), data will be ignored in calculations (Default is 2).
+
+---
+This could be the starting point before further exploration of parameters:
+
+A) If the alignment is of moderate size: 
+
+python SequenceBouncer.py -i <input alignment.fasta>
+
+B) If the alignment is of substantial size:
+
+python SequenceBouncer.py -i <input alignment.fasta> -n 100 -t 10 -s 2
                         
