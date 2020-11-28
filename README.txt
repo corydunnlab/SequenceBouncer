@@ -1,4 +1,5 @@
-SequenceBouncer 
+SequenceBouncer
+Version: 1.17-A
 ----
 Author:
 Cory Dunn
@@ -8,6 +9,10 @@ Email: cory.dunn@helsinki.fi
 ----
 License:
 GPLv3
+----
+Please cite: 
+C.D. Dunn. SequenceBouncer: A method to remove outlier entries from a multiple sequence alignment. bioRxiv. doi:10.1101/2020.11.24.395459.
+
 ----
 Acknowledgements:
 Funding received from the Sigrid Jusélius Foundation contributed to the development of this software.
@@ -21,7 +26,7 @@ Pandas (tested under version 1.1.3),
 Numpy (tested under version 1.19.1)
 ----
 Usage:
-SequenceBouncer_v1_16.py [-h] -i INPUT_FILE [-o OUTPUT_FILE] [-s STRINGENCY] [-k IQR_COEFFICIENT] [-t TRIALS] [-n SUBSAMPLE_SIZE] [-g GAP_PERCENT_CUT]
+SequenceBouncer.py [-h] -i INPUT_FILE [-o OUTPUT_FILE] [-s STRINGENCY] [-k IQR_COEFFICIENT] [-t TRIALS] [-n SUBSAMPLE_SIZE] [-g GAP_PERCENT_CUT]
 
 Required arguments:
   -i INPUT_FILE, --input_file INPUT_FILE
@@ -49,7 +54,7 @@ Optional arguments:
                         For columns with a greater fraction of gaps than the selected value (expressed in percent), data will be ignored in calculations (Default is 2).
 
 ---
-This could be the starting point before further exploration of parameters:
+This could be the starting point for further exploration of parameters:
 
 A) If the alignment is of moderate size: 
 
