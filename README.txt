@@ -1,31 +1,46 @@
 SequenceBouncer
-Version: 1.17-A
+Version: 1.18
+
 ----
+
 Author:
+
 Cory Dunn
 Institute of Biotechnology
 University of Helsinki
 Email: cory.dunn@helsinki.fi
+
 ----
 License:
+
 GPLv3
+
 ----
+
 Please cite: 
+
 C.D. Dunn. SequenceBouncer: A method to remove outlier entries from a multiple sequence alignment. bioRxiv. doi:10.1101/2020.11.24.395459.
 
 ----
+
 Acknowledgements:
+
 Funding received from the Sigrid Jusélius Foundation contributed to the development of this software.
-Code utilized for Shannon entropy calculation, written by Joe R. J. Healey, University of Warwick (https://gist.github.com/jrjhealey/) was modified and used under the GPLv3 license.
+
 ----
+
 Requirements:
+
 SequenceBouncer is implemented in Python 3 (tested under version 3.8.6) 
 Dependencies: 
 Biopython (tested under version 1.78),
 Pandas (tested under version 1.1.3),
 Numpy (tested under version 1.19.1)
+
 ----
+
 Usage:
+
 SequenceBouncer.py [-h] -i INPUT_FILE [-o OUTPUT_FILE] [-s STRINGENCY] [-k IQR_COEFFICIENT] [-t TRIALS] [-n SUBSAMPLE_SIZE] [-g GAP_PERCENT_CUT]
 
 Required arguments:
@@ -54,13 +69,14 @@ Optional arguments:
                         For columns with a greater fraction of gaps than the selected value (expressed in percent), data will be ignored in calculations (Default is 2).
 
 ---
+
 This could be the starting point for further exploration of parameters:
 
-A) If the alignment is of moderate size: 
+i) If the alignment is of moderate size: 
 
 python SequenceBouncer.py -i <input alignment.fasta>
 
-B) If the alignment is of substantial size:
+ii) If the alignment is of substantial size:
 
 python SequenceBouncer.py -i <input alignment.fasta> -n 100 -t 10 -s 2
                         

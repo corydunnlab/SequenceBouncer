@@ -5,8 +5,8 @@
 # Author: Cory Dunn
 # Institution: University of Helsinki
 # Author Email: cory.dunn@helsinki.fi
-# Version: 1.17-A
-version = '1.17-A'
+# Version: 1.18
+version = '1.18'
 # License: GPLv3
 
 from Bio import AlignIO #import AlignIO package
@@ -16,11 +16,8 @@ import pandas as pd #import pandas
 import numpy as np #import numpy
 import time #import time
 import sys
+import math
 import argparse
-#import matplotlib.pyplot as plt
-#from matplotlib import rcParams
-#rcParams['font.family'] = 'sans-serif'
-#rcParams['font.sans-serif'] = ['Arial']
 import gc
 
 print('\nSequenceBouncer: A method to remove outlier entries from a multiple sequence alignment\n')
@@ -64,22 +61,18 @@ elif output_entry != 'X':
     output_tabular = output_entry + '_output_analysis.csv'
     output_full_table = output_entry + '_full_comparison_table.csv'
 
-# start timer
+# Start timer
 
 start_time = time.time() 
 
-# initialize numpy array for sum entropy values
+# Initialize
 
 alignment_record_name_list = []
-entropy_array = []
 
 for record in SeqIO.parse(input_sequence,"fasta"):
         alignment_record_name_list.append(record.name)
 
 depth_of_alignment = (len(alignment_record_name_list))
-
-entropy_array = np.empty((depth_of_alignment,depth_of_alignment))
-entropy_array[:] = np.nan
 
 record_sequence_trial_results = pd.DataFrame(alignment_record_name_list, columns=['Accession'])
 
@@ -94,126 +87,14 @@ print('Flags are -k: ' + str(multiplier_on_interquartile_range) + ', -n: ' + str
 if min_trials_for_each_sequence != 1:
     print('          -s: ' + str(stringency_flag) + ', -t: ' + str(min_trials_for_each_sequence))
 
-# initialize numpy array for gap counts
-
 length_of_alignment = len(list(record.seq))
 
-gap_array = np.zeros((depth_of_alignment,length_of_alignment))
-
-print('Alignment length is: ' + str(int(gap_array.size/depth_of_alignment)) + ' characters.')
+print('Alignment length is: ' + str(length_of_alignment) + ' characters.')
 print("Alignment depth is: " + str(depth_of_alignment) + " sequences.")
 
-# test gap percentage at different alignment positions
+# Load sequences from alignment into list and control case
 
-print('Calculating gap metrics.')
-count_a = -1
-
-for record in SeqIO.parse(input_sequence,"fasta"):
-    count_a += 1  
-    alignment_record_sequence_list_for_gap_breakdown = list(record.seq)
-    for idx, item in enumerate(alignment_record_sequence_list_for_gap_breakdown): 
-        if alignment_record_sequence_list_for_gap_breakdown[idx] == '-':
-            gap_array[count_a,idx] = 1
-        else:
-            gap_array[count_a,idx] = 0
-
-del alignment_record_sequence_list_for_gap_breakdown
-
-gap_array_column_sums = gap_array.sum(axis=0)
-
-gap_array_column_sum_S = pd.Series(gap_array_column_sums)
-
-# generate boolean based upon gap values
-
-gap_percent = gap_array_column_sum_S/depth_of_alignment
-
-gap_value_cutoff_float = float(gap_value_cutoff/100)
-
-gap_percent_bool_series_remove = gap_percent > gap_value_cutoff_float
-
-gap_percent_bool_index_remove = gap_percent_bool_series_remove[gap_percent_bool_series_remove].index
-
-print('Positions analyzed after ' + str(gap_value_cutoff) + '% gap cutoff: ' + str(length_of_alignment-len(gap_percent_bool_index_remove)))
-
-comparison_time_full_table_seconds = depth_of_alignment * depth_of_alignment * (length_of_alignment-len(gap_percent_bool_index_remove)) * 3.14E-8
-if comparison_time_full_table_seconds > 1800 and number_in_small_test == depth_of_alignment:
-    print('\n***WARNING: An input alignment of this size may take a considerable amount of time')
-    print('   if all pairwise sequence comparisons are performed.')
-    print('   A sampling-based approach may be considered.')
-    print('   For a sampling-based approach, take advantage of the -n, -t, and -s flags.\n')
-
-print('Calculating Shannon entropy values across all input sequences.')
-
-# Calculate Shannon entropy from a MSA. Routine derived from ShannonMSA 1.0.0 by Joe R. J. Healey, University of Warwick
-# under the GPLv3 license. Gaps and N's are included in the calculation.
-
-msa = input_sequence
-alnformat = "fasta"
-verbose = 1
-
-def parseMSA(msa, alnformat, verbose):
-    from Bio import AlignIO
-    alignment = AlignIO.read(msa, alnformat)
-    # Do a little sanity checking:
-    seq_lengths_list = []
-    for record in alignment:
-       seq_lengths_list.append(len(record))
-    seq_lengths = set(seq_lengths_list)
-    if len(seq_lengths) != 1:
-        sys.stderr.write("Your alignment lengths aren't equal. Check your alignment file.")
-        sys.exit(1)
-    index = range(1, list(seq_lengths)[0]+1)
-    return alignment, list(seq_lengths), index
-
-def shannon_entropy(list_input):
-    import math
-    unique_base = set(list_input)
-    M   =  len(list_input)
-    entropy_list = []
-    # Number of residues in column
-    for base in unique_base:
-        n_i = list_input.count(base) # Number of residues of type i
-        P_i = n_i/float(M) # n_i (Number of residues of type i) / M(Number of residues in column)
-        entropy_i = P_i*(math.log(P_i,2))
-        entropy_list.append(entropy_i)
-    sh_entropy = -(sum(entropy_list))
-    return sh_entropy
-
-def shannon_entropy_list_msa(alignment):
-    # Calculate Shannon Entropy across the whole MSA
-    shannon_entropy_list = []
-    for col_no in range(len(list(alignment[0]))):
-        list_input = list(alignment[:, col_no])
-        shannon_entropy_list.append(shannon_entropy(list_input))
-    return shannon_entropy_list
-
-def main():
-    alignment, seq_lengths, index = parseMSA(msa, alnformat, verbose)
-    sel = shannon_entropy_list_msa(alignment)
-    entropy_record = []
-    for c1, c2 in zip(index, sel):
-        record_to_append = c2
-        entropy_record.append(record_to_append)
-    return entropy_record
-
-entropy_record = main()
-
-# load entropy data and remove those at gap% beyond threshold
-
-entropylist_S = pd.Series(entropy_record)
-
-entropylist_S_gap_considered = entropylist_S.drop(gap_percent_bool_index_remove)
-max_entropy_before_gaps = pd.Series.max(entropylist_S)
-print('Maximum Shannon entropy alignment score before gap % considered: ', f'{max_entropy_before_gaps: .2f}')
-max_entropy_after_gaps = pd.Series.max(entropylist_S_gap_considered)
-print('Maximum Shannon entropy alignment score after gap % considered: ', f'{max_entropy_after_gaps: .2f}')
-
-entropy_record_numpy = entropylist_S_gap_considered.to_numpy()
-entropy_record_numpy.shape = (-1,len(entropylist_S_gap_considered))
-
-print('Preparing sequences for comparison.')
-
-# load sequences from alignment into list and control case
+print('Generating sequence dataframe.')
 
 record_x_toward_seq_dataframe = []
 sequence_records = []
@@ -224,42 +105,87 @@ for record_x in SeqIO.parse(input_sequence,"fasta"):
     record_x_toward_seq_dataframe_ASCII = [ord(x) for x in record_x_toward_seq_dataframe_lower]
     sequence_records.append(record_x_toward_seq_dataframe_ASCII)
 
-#generate dataframe of alignment from list
+# Generate dataframe of alignment from list
 
-print('Generating sequence dataframe.')
 sequence_dataframe = pd.DataFrame(sequence_records)
-
 sequence_dataframe = sequence_dataframe.astype('int8')
 
-# remove gapped positions
+# Calculate Shannon entropy and fraction of column gapped
+
+print('Calculating Shannon entropy values and gap metrics across all input sequences.')
+entropy_record = []
+gap_record = []
+sequence_columns = len(sequence_dataframe.axes[1])
+for i in range(sequence_columns):
+    column_fractions_S = sequence_dataframe[i].value_counts(normalize='True')
+    shannon_entropy_column = 0
+    gap_fraction_column = 0
+    for character, val in  column_fractions_S.iteritems():
+        shannon_entropy_column +=  val * math.log(val,2)
+        if character == 45:
+            gap_fraction_column = val
+    shannon_entropy_column *= -1
+    entropy_record.append(shannon_entropy_column)
+    gap_record.append(gap_fraction_column)
+entropylist_S = pd.Series(entropy_record)
+gap_fraction_S = pd.Series(gap_record)
+
+# Generate boolean based upon gap values
+
+gap_value_cutoff_float = float(gap_value_cutoff/100)
+gap_percent_bool_series_remove = gap_fraction_S > gap_value_cutoff_float
+gap_percent_bool_index_remove = gap_percent_bool_series_remove[gap_percent_bool_series_remove].index
+
+# Remove gapped positions
+
+entropylist_S_gap_considered = entropylist_S.drop(gap_percent_bool_index_remove)
+max_entropy_before_gaps = pd.Series.max(entropylist_S)
+print('Maximum Shannon entropy alignment score before gap % considered: ', f'{max_entropy_before_gaps: .2f}')
+max_entropy_after_gaps = pd.Series.max(entropylist_S_gap_considered)
+print('Maximum Shannon entropy alignment score after gap % considered: ', f'{max_entropy_after_gaps: .2f}')
+
+entropy_record_numpy = entropylist_S_gap_considered.to_numpy()
+entropy_record_numpy.shape = (-1,len(entropylist_S_gap_considered))
 
 print('Removing gapped positions from analysis set.')
 sequence_dataframe_gap_considered = sequence_dataframe.drop(gap_percent_bool_index_remove,axis=1)
 print("Elapsed time: ~ " + str(int(time.time() - start_time)) + " seconds.")
+print('Positions analyzed after ' + str(gap_value_cutoff) + '% gap cutoff: ' + str(length_of_alignment-len(gap_percent_bool_index_remove)))
 
-# clear out unused items from memory
+print('Preparing sequences for comparison.')
+
+# Comparison time warning
+
+comparison_time_full_table_seconds = depth_of_alignment * depth_of_alignment * (length_of_alignment-len(gap_percent_bool_index_remove)) * 3.14E-8
+if comparison_time_full_table_seconds > 1800 and number_in_small_test == depth_of_alignment:
+    print('\n***WARNING: An input alignment of this size may take a considerable amount of time')
+    print('   if all pairwise sequence comparisons are performed.')
+    print('   A sampling-based approach may be considered.')
+    print('   For a sampling-based approach, take advantage of the -n, -t, and -s flags.\n')
+
+# Clear out unused items from memory
 
 del sequence_records
 del sequence_dataframe
 gc.collect()
 
-# prepare dataframe for storage of trial results (these columns are stripped away later if only one trial is performed)
+# Prepare dataframe for storage of trial results (these columns are stripped away later if only one trial is performed)
 
 record_sequence_trial_results['Total_trials'] = 0
 record_sequence_trial_results['Outlier_instances'] = 0
 
-# set trial counter
+# Set trial counter
 print('Beginning sequence trials.')
 trial_count = 0
 
-# avoid empty source dataframe
+# Avoid empty source dataframe
 
 if depth_of_alignment//number_in_small_test == depth_of_alignment/number_in_small_test:
     times_to_sample_max_keep = (depth_of_alignment//number_in_small_test)
 else:
     times_to_sample_max_keep = (depth_of_alignment//number_in_small_test) + 1
 
-# define the calculation engine
+# Define the calculation engine
 
 def engine():
     for counter_x in range(table_sample_numpy_rows):
@@ -318,12 +244,12 @@ for trial in range(min_trials_for_each_sequence):
         table_sample_numpy = table_sample_numpy.astype(np.int8) # change datatype in an attempt to reduce memory imprint
         table_sample_numpy_rows, table_sample_numpy_columns = table_sample_numpy.shape
     
-    # initiate numpy array for entropy calculation values
+    # Initiate numpy array for entropy calculation values
     
         entropy_array = np.empty((number_to_choose,number_to_choose),dtype=float)
         entropy_array[:] = np.nan
                           
-    # calculations of match or not, and sum entropy values
+    # Calculations of match or not, and sum entropy values
 
         engine()
 
@@ -346,7 +272,7 @@ for trial in range(min_trials_for_each_sequence):
        
         record_sequence_trial_results.loc[entropy_DF_analysis.index,'Total_trials'] += 1
 
-# calculate interquartile range and outlier cutoff
+# Calculate interquartile range and outlier cutoff
 
         entropy_DF_analysis_values_list = entropy_DF_analysis.values.tolist()
         q25, q75 = np.nanpercentile(entropy_DF_analysis_values_list, 25), np.nanpercentile(entropy_DF_analysis_values_list, 75)
@@ -355,7 +281,7 @@ for trial in range(min_trials_for_each_sequence):
         CIQR = iqr * multiplier_on_interquartile_range
         lower_cutoff, upper_cutoff = q25 - CIQR, q75 + CIQR
 
-# identify the outlier sequences using the interquartile range cutoff
+# Identify the outlier sequences using the interquartile range cutoff
 
         entropy_DF_analysis_above_cutoff = entropy_DF_analysis > upper_cutoff
 
@@ -365,7 +291,7 @@ for trial in range(min_trials_for_each_sequence):
     print("Elapsed time: ~ " + str(int(time.time() - start_time)) + " seconds.")
     print("Estimated total time for analysis: ~ " + str(int(((time.time() - start_time))/(1+trial)*min_trials_for_each_sequence)) + " seconds.")
 
-# print full distance matrix for analysis and generate a plot only if a single test of all sequences versus all sequences was performed
+# Print full distance matrix for analysis and generate a plot only if a single test of all sequences versus all sequences was performed
 
 if number_in_small_test == depth_of_alignment:
     print('Cut-off value for median taken across comparisons (full-alignment pairwise analysis): ', f'{upper_cutoff: .1f}')
@@ -378,8 +304,11 @@ if number_in_small_test == depth_of_alignment:
     entropy_DF.insert(0,'Median_across_pairwise_comparisons',first_column)
     entropy_DF.to_csv(output_full_table)
     
-    # print figure describing trials
-    
+    # Print figure describing trials (NOT ACTIVE IN CURRENT VERSION)
+    # import matplotlib.pyplot as plt
+    # from matplotlib import rcParams
+    # rcParams['font.family'] = 'sans-serif'
+    # rcParams['font.sans-serif'] = ['Arial']
     #fig, ax = plt.subplots()
     #plt.figure(figsize=(8,8))
     #plt.xlabel('Sequence number within input file', fontsize=12)
@@ -395,7 +324,7 @@ if number_in_small_test == depth_of_alignment:
     #plt.colorbar()
     #plt.savefig(output_figure + '.pdf', dpi=600)
 
-# prepare dataframe to generate FASTA files
+# Prepare dataframe to generate FASTA files
 
 record_sequence_trial_results['Fraction_positive'] = record_sequence_trial_results['Outlier_instances'] / record_sequence_trial_results['Total_trials']
 
@@ -409,7 +338,7 @@ sequence_records_S = pd.Series(record_seq_convert_to_string)
 frame = { 'Accession': acc_records_S, 'Sequence': sequence_records_S }
 FASTA_output_unclean_DF = pd.DataFrame(frame) 
 
-# generating clean dataframes
+# Generating clean dataframes
 
 if stringency_flag == 1: # minimal stringency
     FASTA_output_clean_DF = FASTA_output_unclean_DF.loc[record_sequence_trial_results['Fraction_positive'] != 1]
@@ -418,7 +347,7 @@ if stringency_flag == 2: # moderate stringency
 if stringency_flag == 3: # maximal stringency
     FASTA_output_clean_DF = FASTA_output_unclean_DF.loc[record_sequence_trial_results['Fraction_positive'] == 0]
 
-# generating rejection dataframes
+# Generating rejection dataframes
 
 if stringency_flag == 1: # minimal stringency
     FASTA_output_reject_DF = FASTA_output_unclean_DF.loc[record_sequence_trial_results['Fraction_positive'] == 1]
@@ -427,7 +356,7 @@ if stringency_flag == 2: # moderate stringency
 if stringency_flag == 3: # maximal stringency
     FASTA_output_reject_DF = FASTA_output_unclean_DF.loc[record_sequence_trial_results['Fraction_positive'] != 0]
 
-# save clean FASTA file
+# Save clean FASTA file
 
 print('Writing cleaned alignment as FASTA.')
 print(FASTA_output_clean_DF)
@@ -440,7 +369,7 @@ for seqi in range(len(FASTA_output_final_acc_list)):
     ofile.write(">" + FASTA_output_final_acc_list[seqi] + "\n" + FASTA_output_final_seq_list[seqi] + "\n")
 ofile.close()
 
-# save rejected FASTA file
+# Save rejected FASTA file
 
 print('Writing rejected sequences to FASTA.')
 print(FASTA_output_reject_DF)
@@ -452,7 +381,7 @@ for seqi in range(len(FASTA_output_rejected_acc_list)):
     ofile.write(">" + FASTA_output_rejected_acc_list[seqi] + "\n" + FASTA_output_rejected_seq_list[seqi] + "\n")
 ofile.close()
 
-# save analysis file as CSV
+# Save analysis file as CSV
 
 record_sequence_trial_results['Selected_for_retention'] = ''
 if stringency_flag == 1: # minimal stringency
@@ -471,7 +400,7 @@ if min_trials_for_each_sequence == 1:
 
 record_sequence_trial_results.to_csv(output_tabular,index=False)
 
-# provide runtime
+# Provide total runtime
 
 print("Analysis complete.")
 print("Total time for analysis: ~ " + str(int(((time.time() - start_time))/(1+trial)*min_trials_for_each_sequence)) + " seconds.")
