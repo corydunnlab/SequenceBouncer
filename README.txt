@@ -34,8 +34,8 @@ Requirements:
 SequenceBouncer is implemented in Python 3 (tested under version 3.8.6) 
 Dependencies: 
 Biopython (tested under version 1.78),
-Pandas (tested under version 1.1.3),
-Numpy (tested under version 1.19.1)
+Pandas (tested under version 1.1.4),
+Numpy (tested under version 1.19.4)
 
 ----
 
