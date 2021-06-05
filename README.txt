@@ -74,9 +74,9 @@ This could be the starting point for further exploration of parameters:
 
 i) If the alignment is of moderate size: 
 
-python SequenceBouncer.py -i <input alignment.fasta>
+python SequenceBouncer.py -i <input alignment>
 
 ii) If the alignment is of substantial size:
 
-python SequenceBouncer.py -i <input alignment.fasta> -n 100 -t 10 -s 2
+python SequenceBouncer.py -i <input alignment> -n 100 -t 10 -s 2
                         
