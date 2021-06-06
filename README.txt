@@ -45,18 +45,18 @@ SequenceBouncer.py [-h] -i INPUT_FILE [-o OUTPUT_FILE] [-s STRINGENCY] [-k IQR_C
 
 Required arguments:
   -i INPUT_FILE, --input_file INPUT_FILE
-                        Input file in FASTA format.
+                        Input multiple sequence alignment file in FASTA format.
 
 Optional arguments:
   -o OUTPUT_FILE, --output_file OUTPUT_FILE
-                        Output filename [do not include extensions] (Default will be 'input_file.ext').
+                        Output filename [do not include file extensions] (Default will be generated using the input filename).
 
   -s STRINGENCY, --stringency STRINGENCY
                         1: Minimal stringency. 2: Moderate stringency. 3: Maximum stringency. (Default is moderate stringency).
 
 
   -k IQR_COEFFICIENT, --IQR_coefficient IQR_COEFFICIENT
-                        Coefficient multiplied by the interquartile range that helps to define an outlier sequence (Default is 1.0)..
+                        Coefficient multiplied by the interquartile range that helps to define an outlier sequence (Default is 1.0).
 
   -t TRIALS, --trials TRIALS
                         Number of times each sequence is sampled and tested (Default is to examine all sequences in one single
