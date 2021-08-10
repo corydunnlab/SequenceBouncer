@@ -225,11 +225,11 @@ def engine():
     for counter_x in range(table_sample_numpy_rows):
                 counter_x_numpy_row = table_sample_numpy[counter_x:(counter_x+1),:]
                 if depth_of_alignment < 1000 and ((counter_x+1)/25) == ((counter_x+1)//25):
-                    log.info('\rSequences analyzed: '+str(counter_x+1))
+                    print('\r--# Sequences analyzed: '+str(counter_x+1), end='')
                 elif depth_of_alignment < 10000 and ((counter_x+1)/250) == ((counter_x+1)//250):
-                    log.info('\rSequences analyzed: '+str(counter_x+1))
+                    print('\r--# Sequences analyzed: '+str(counter_x+1), end='')
                 elif depth_of_alignment < 100000 and ((counter_x+1)/2500) == ((counter_x+1)//2500):
-                    log.info('\rSequences analyzed: '+str(counter_x+1))
+                    print('\r--# Sequences analyzed: '+str(counter_x+1), end='')
                 for counter_y in range((counter_x+1)):
                     counter_y_numpy_row = table_sample_numpy[counter_y:(counter_y+1),:]
                     comparison_bool_series_match = counter_x_numpy_row == counter_y_numpy_row
@@ -247,14 +247,14 @@ def engine():
 for trial in range(min_trials_for_each_sequence):
     
     if min_trials_for_each_sequence > 1:
-        log.info("Trial: " + str(trial+1) + " of " + str(min_trials_for_each_sequence))
+        print("Trial: " + str(trial+1) + " of " + str(min_trials_for_each_sequence))
     
     sequence_dataframe_gap_considered = sequence_dataframe_gap_considered.sample(frac=1,random_state = seed) # shuffle master sequence dataframe, use user-defined or standard random seed
     sequence_dataframe_gap_considered_max_keep = sequence_dataframe_gap_considered # copy shuffled version for work below
 
     for j in range(times_to_sample_max_keep): 
         if number_in_small_test != depth_of_alignment and (j+1)//50 == (j+1)/50:
-            log.info('\rSample: '+str((j+1)) + ' of ' +str(times_to_sample_max_keep) + ' | Trial: ' + str(trial+1))
+            print('\rSample: '+str((j+1)) + ' of ' +str(times_to_sample_max_keep) + ' | Trial: ' + str(trial+1), end='')
         max_times_tested = record_sequence_trial_results['Total_trials'].max()
         
         if max_times_tested > trial:
