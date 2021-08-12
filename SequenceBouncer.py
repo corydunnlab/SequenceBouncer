@@ -20,6 +20,7 @@ import math
 import argparse
 import gc
 import random
+import os
 
 # Set logger
 import logging
@@ -70,7 +71,8 @@ log = logging.getLogger(__name__)
 
 if output_entry == 'X':
     sep = '.'
-    input_strip = input_sequence.split(sep, 1)[0]
+    # input_strip = input_sequence.split(sep, 1)[0]
+    input_strip = os.path.splitext(input_sequence)[0]
     output_figure = input_strip + '_output_figure'
     output_sequence = input_strip + '_output_clean.fasta'
     output_rejected = input_strip + '_output_rejected.fasta'
@@ -82,6 +84,12 @@ elif output_entry != 'X':
     output_rejected = output_entry + '_output_rejected.fasta'
     output_tabular = output_entry + '_output_analysis.csv'
     output_full_table = output_entry + '_full_comparison_table.csv'
+
+log.debug(f'output_figure: {output_figure}')
+log.debug(f'output_sequence: {output_sequence}')
+log.debug(f'output_rejected: {output_rejected}')
+log.debug(f'output_tabular: {output_tabular}')
+log.debug(f'output_full_table: {output_full_table}')
 
 # Start timer
 
