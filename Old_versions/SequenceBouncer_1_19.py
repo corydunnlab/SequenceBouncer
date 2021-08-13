@@ -5,8 +5,8 @@
 # Author: Cory Dunn
 # Institution: University of Helsinki
 # Author Email: cory.dunn@helsinki.fi
-# Version: 1.20
-version = '1.20'
+# Version: 1.19
+version = '1.19'
 # License: GPLv3
 
 from Bio import AlignIO
@@ -146,11 +146,6 @@ gap_percent_bool_index_remove = gap_percent_bool_series_remove[gap_percent_bool_
 # Remove gapped positions
 
 entropylist_S_gap_considered = entropylist_S.drop(gap_percent_bool_index_remove)
-print(entropylist_S_gap_considered.size)
-if entropylist_S_gap_considered.size == 0:
-    print('All columns were removed as gaps.')
-    print('Choose a larger value for --gap_percent_cut to continue.')
-    exit()
 max_entropy_before_gaps = pd.Series.max(entropylist_S)
 print('Maximum Shannon entropy alignment score before gap % considered: ', f'{max_entropy_before_gaps: .2f}')
 max_entropy_after_gaps = pd.Series.max(entropylist_S_gap_considered)

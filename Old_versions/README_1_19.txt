@@ -1,5 +1,5 @@
 SequenceBouncer
-Version: 1.20
+Version: 1.19
 
 ----
 
@@ -26,7 +26,7 @@ C.D. Dunn. SequenceBouncer: A method to remove outlier entries from a multiple s
 
 Acknowledgements:
 
-Funding received from the Sigrid Jusélius Foundation contributed to the development of this software. The author thanks Ed Davis, Oregon State University, for suggestions.
+Funding received from the Sigrid Jusélius Foundation contributed to the development of this software.
 
 ----
 
