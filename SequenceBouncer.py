@@ -20,6 +20,12 @@ import math
 import argparse
 import gc
 import random
+import os
+
+# Set logger
+import logging
+from rich.logging import RichHandler
+
 
 print('\nSequenceBouncer: A method to remove outlier entries from a multiple sequence alignment\n')
 print('Cory Dunn')
@@ -40,6 +46,7 @@ ap.add_argument('-n','--subsample_size',required=False,type=int,default=0,help='
 ap.add_argument('-t','--trials',required=False,type=int,default=1,help='|> Available for large alignments | Number of times each sequence is sampled and tested (default is to examine all sequences in one single trial, but 5 or 10 trials may work well when subsamples are taken from large alignments).\n')
 ap.add_argument('-s','--stringency',required=False,type=int,default=2,help='|> Available for large alignments | 1: Minimal stringency 2: Moderate stringency 3: Maximum stringency (default is moderate stringency).\n')
 ap.add_argument('-r','--random_seed',required=False,type=int,default=random.randint(0,1000),help='Random seed (integer) to be used during a sampling-based approach (default is that the seed is randomly selected). The user can use this seed to obtain reproducible output and should note it in their publications. \n')
+ap.add_argument('--debug',help='Turn on debugging messages.',action='store_true')
 
 args = vars(ap.parse_args())
 input_sequence = args['input_file']
@@ -51,11 +58,21 @@ gap_value_cutoff = args['gap_percent_cut']
 output_entry = args['output_file']
 seed = args['random_seed']
 
+logging_level='INFO'
+if args['debug']:
+    logging_level='DEBUG'
+FORMAT = '%(message)s'
+logging.basicConfig(
+    level=logging_level, format=FORMAT, datefmt='[%X]', handlers=[RichHandler()]
+)
+log = logging.getLogger(__name__)
+
 # Prepare output filenames
 
 if output_entry == 'X':
     sep = '.'
-    input_strip = input_sequence.split(sep, 1)[0]
+    # input_strip = input_sequence.split(sep, 1)[0]
+    input_strip = os.path.splitext(input_sequence)[0]
     output_figure = input_strip + '_output_figure'
     output_sequence = input_strip + '_output_clean.fasta'
     output_rejected = input_strip + '_output_rejected.fasta'
@@ -68,16 +85,23 @@ elif output_entry != 'X':
     output_tabular = output_entry + '_output_analysis.csv'
     output_full_table = output_entry + '_full_comparison_table.csv'
 
+log.debug(f'output_figure: {output_figure}')
+log.debug(f'output_sequence: {output_sequence}')
+log.debug(f'output_rejected: {output_rejected}')
+log.debug(f'output_tabular: {output_tabular}')
+log.debug(f'output_full_table: {output_full_table}')
+
 # Start timer
 
 start_time = time.time() 
+log.debug(f'start time: {start_time}')
 
 # Initialize
 
 alignment_record_name_list = []
 
 for record in SeqIO.parse(input_sequence,"fasta"):
-        alignment_record_name_list.append(record.name)
+    alignment_record_name_list.append(record.name)
 
 depth_of_alignment = (len(alignment_record_name_list))
 
@@ -89,19 +113,23 @@ if number_in_small_test == 0:
 if number_in_small_test == depth_of_alignment:
     min_trials_for_each_sequence = 1
 
-print("Analyzing '" + input_sequence + "'.")
-print('Flags are --IQR_coefficient: ' + str(multiplier_on_interquartile_range) + ', -subsample_size: ' + str(number_in_small_test) + ', --gap_percent_cut: ' + str(gap_value_cutoff))
+log.info(f"Analyzing '{input_sequence}'.")
+log.info(f'Flags are --IQR_coefficient: {multiplier_on_interquartile_range} '
+         f'--subsample_size: {number_in_small_test} '
+         f'--gap_percent_cut: {gap_value_cutoff}')
 if min_trials_for_each_sequence != 1:
-    print('          --stringency: ' + str(stringency_flag) + ', --trials: ' + str(min_trials_for_each_sequence) + ', --random_seed: ' + str(seed))
+    log.info(f'--stringency: {stringency_flag} '
+             f'--trials: {min_trials_for_each_sequence} '
+             f'--random_seed: {seed}')
 
 length_of_alignment = len(list(record.seq))
 
-print('Input alignment length is: ' + str(length_of_alignment) + ' characters.')
-print("Input alignment depth is: " + str(depth_of_alignment) + " sequences.")
+log.info(f'Input alignment length is: {length_of_alignment} characters.')
+log.info(f'Input alignment depth is: {depth_of_alignment} sequences.')
 
 # Load sequences from alignment into list and control case
 
-print('Generating sequence dataframe.')
+log.info('Generating sequence dataframe.')
 
 record_x_toward_seq_dataframe = []
 sequence_records = []
@@ -119,7 +147,7 @@ sequence_dataframe = sequence_dataframe.astype('int8')
 
 # Calculate Shannon entropy and fraction of column gapped
 
-print('Calculating Shannon entropy values and gap metrics across all input sequences.')
+log.info('Calculating Shannon entropy values and gap metrics across all input sequences.')
 entropy_record = []
 gap_record = []
 sequence_columns = len(sequence_dataframe.axes[1])
@@ -145,30 +173,36 @@ gap_percent_bool_index_remove = gap_percent_bool_series_remove[gap_percent_bool_
 
 # Remove gapped positions
 
+log.debug(f'Length before gap removal: {entropylist_S.size}')
 entropylist_S_gap_considered = entropylist_S.drop(gap_percent_bool_index_remove)
+log.debug(f'Length after gap removal: {entropylist_S_gap_considered.size}')
+if entropylist_S_gap_considered.size == 0:
+    log.error('All columns were removed as gaps.')
+    log.error('Choose a larger value for --gap_percent_cut to continue.')
+    exit()
 max_entropy_before_gaps = pd.Series.max(entropylist_S)
-print('Maximum Shannon entropy alignment score before gap % considered: ', f'{max_entropy_before_gaps: .2f}')
+log.info(f'Maximum Shannon entropy alignment score before gap % considered: {max_entropy_before_gaps: .2f}')
 max_entropy_after_gaps = pd.Series.max(entropylist_S_gap_considered)
-print('Maximum Shannon entropy alignment score after gap % considered: ', f'{max_entropy_after_gaps: .2f}')
+log.info(f'Maximum Shannon entropy alignment score after gap % considered: {max_entropy_after_gaps: .2f}')
 
 entropy_record_numpy = entropylist_S_gap_considered.to_numpy()
 entropy_record_numpy.shape = (-1,len(entropylist_S_gap_considered))
 
-print('Removing gapped positions from analysis set.')
+log.info('Removing gapped positions from analysis set.')
 sequence_dataframe_gap_considered = sequence_dataframe.drop(gap_percent_bool_index_remove,axis=1)
-print("Elapsed time: ~ " + str(int(time.time() - start_time)) + " seconds.")
-print('Alignment positions analyzed after ' + str(gap_value_cutoff) + '% gap cutoff: ' + str(length_of_alignment-len(gap_percent_bool_index_remove)))
+log.info('Elapsed time: ~ ' + str(int(time.time() - start_time)) + ' seconds.')
+log.info(f'Alignment positions analyzed after {gap_value_cutoff}% gap cutoff: {length_of_alignment-len(gap_percent_bool_index_remove)}')
 
-print('Preparing sequences for comparison.')
+log.info('Preparing sequences for comparison.')
 
 # Comparison time warning
 
 comparison_time_full_table_seconds = depth_of_alignment * depth_of_alignment * (length_of_alignment-len(gap_percent_bool_index_remove)) * 3.14E-8
 if comparison_time_full_table_seconds > 1800 and number_in_small_test == depth_of_alignment:
-    print('\n***WARNING: An input alignment of this size may take a considerable amount of time')
-    print('   if all pairwise sequence comparisons are performed.')
-    print('   A sampling-based approach may be considered.')
-    print('   For a sampling-based approach, take advantage of the -n, -t, and -s flags.\n')
+    log.warning('\n***WARNING: An input alignment of this size may take a considerable amount of time')
+    log.warning('   if all pairwise sequence comparisons are performed.')
+    log.warning('   A sampling-based approach may be considered.')
+    log.warning('   For a sampling-based approach, take advantage of the -n, -t, and -s flags.\n')
 
 # Clear out unused items from memory
 
@@ -183,7 +217,7 @@ record_sequence_trial_results['Outlier_instances'] = 0
 
 # Set trial counter
 
-print('Beginning sequence trials.')
+log.info('Beginning sequence trials.')
 trial_count = 0
 
 # Avoid empty source dataframe
@@ -199,11 +233,11 @@ def engine():
     for counter_x in range(table_sample_numpy_rows):
                 counter_x_numpy_row = table_sample_numpy[counter_x:(counter_x+1),:]
                 if depth_of_alignment < 1000 and ((counter_x+1)/25) == ((counter_x+1)//25):
-                    print('\rSequences analyzed: '+str(counter_x+1))
+                    print('\r--# Sequences analyzed: '+str(counter_x+1), end='')
                 elif depth_of_alignment < 10000 and ((counter_x+1)/250) == ((counter_x+1)//250):
-                    print('\rSequences analyzed: '+str(counter_x+1))
+                    print('\r--# Sequences analyzed: '+str(counter_x+1), end='')
                 elif depth_of_alignment < 100000 and ((counter_x+1)/2500) == ((counter_x+1)//2500):
-                    print('\rSequences analyzed: '+str(counter_x+1))
+                    print('\r--# Sequences analyzed: '+str(counter_x+1), end='')
                 for counter_y in range((counter_x+1)):
                     counter_y_numpy_row = table_sample_numpy[counter_y:(counter_y+1),:]
                     comparison_bool_series_match = counter_x_numpy_row == counter_y_numpy_row
@@ -228,7 +262,7 @@ for trial in range(min_trials_for_each_sequence):
 
     for j in range(times_to_sample_max_keep): 
         if number_in_small_test != depth_of_alignment and (j+1)//50 == (j+1)/50:
-            print('\rSample: '+str((j+1)) + ' of ' +str(times_to_sample_max_keep) + ' | Trial: ' + str(trial+1))
+            print('\rSample: '+str((j+1)) + ' of ' +str(times_to_sample_max_keep) + ' | Trial: ' + str(trial+1), end='')
         max_times_tested = record_sequence_trial_results['Total_trials'].max()
         
         if max_times_tested > trial:
@@ -287,14 +321,14 @@ for trial in range(min_trials_for_each_sequence):
         entropy_median_too_high = entropy_DF_analysis_above_cutoff.loc[entropy_DF_analysis_above_cutoff['Median'] == True]
         record_sequence_trial_results.loc[entropy_median_too_high.index,'Outlier_instances'] += 1
     
-    print("Elapsed time: ~ " + str(int(time.time() - start_time)) + " seconds.")
-    print("Estimated total time for analysis: ~ " + str(int(((time.time() - start_time))/(1+trial)*min_trials_for_each_sequence)) + " seconds.")
+    log.info("Elapsed time: ~ " + str(int(time.time() - start_time)) + " seconds.")
+    log.info("Estimated total time for analysis: ~ " + str(int(((time.time() - start_time))/(1+trial)*min_trials_for_each_sequence)) + " seconds.")
 
 # Print full distance matrix for analysis and generate a plot only if a single test of all sequences versus all sequences was performed
 
 if number_in_small_test == depth_of_alignment:
 
-    print('Cut-off value for median taken across comparisons (full-alignment pairwise analysis): ', f'{upper_cutoff: .1f}')
+    log.info(f'Cut-off value for median taken across comparisons (full-alignment pairwise analysis): {upper_cutoff: .1f}')
     entropy_DF.sort_index(axis=0,inplace=True,ascending=True)
     entropy_DF.sort_index(axis=1,inplace=True,ascending=True)
     entropy_DF.index = alignment_record_name_list
@@ -358,7 +392,7 @@ if stringency_flag == 3: # maximal stringency
 
 # Save clean FASTA file
 
-print('Writing cleaned alignment as FASTA.')
+log.info('Writing cleaned alignment as FASTA.')
 print(FASTA_output_clean_DF)
 FASTA_output_final_acc_list = FASTA_output_clean_DF.loc[:,'Accession'].values.tolist()
 FASTA_output_final_seq_list = FASTA_output_clean_DF.loc[:,'Sequence'].values.tolist()
@@ -371,7 +405,7 @@ ofile.close()
 
 # Save rejected FASTA file
 
-print('Writing rejected sequences to FASTA.')
+log.info('Writing rejected sequences to FASTA.')
 print(FASTA_output_reject_DF)
 FASTA_output_rejected_acc_list = FASTA_output_reject_DF.loc[:,'Accession'].values.tolist()
 FASTA_output_rejected_seq_list = FASTA_output_reject_DF.loc[:,'Sequence'].values.tolist()
@@ -402,7 +436,7 @@ record_sequence_trial_results.to_csv(output_tabular,index=False)
 
 # Provide total runtime
 
-print("Analysis complete.")
-print("Total time for analysis: ~ " + str(int(((time.time() - start_time))/(1+trial)*min_trials_for_each_sequence)) + " seconds.")
+log.info("Analysis complete.")
+log.info("Total time for analysis: ~ " + str(int(((time.time() - start_time))/(1+trial)*min_trials_for_each_sequence)) + " seconds.")
 
 # %%
