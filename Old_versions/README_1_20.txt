@@ -1,5 +1,5 @@
 SequenceBouncer
-Version: 1.21
+Version: 1.20
 
 ----
 
@@ -32,13 +32,11 @@ Funding received from the Sigrid Jusélius Foundation contributed to the develop
 
 Requirements:
 
-SequenceBouncer is implemented in Python 3 (current version tested under Python version 3.9.4) 
-
+SequenceBouncer is implemented in Python 3 (tested under version 3.9.5) 
 Dependencies: 
-
-Biopython (tested under version 1.78),
+Biopython (tested under version 1.79),
 Pandas (tested under version 1.2.4),
-Numpy (tested under version 1.20.2)
+Numpy (tested under version 1.20.3)
 
 ----
 
