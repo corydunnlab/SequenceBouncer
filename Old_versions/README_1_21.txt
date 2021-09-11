@@ -1,5 +1,5 @@
 SequenceBouncer
-Version: 1.22
+Version: 1.21
 
 ----
 
@@ -38,8 +38,7 @@ Dependencies:
 
 Biopython (tested under version 1.78),
 Pandas (tested under version 1.2.4),
-Numpy (tested under version 1.20.2),
-Matplotlib (tested under version 3.4.2)
+Numpy (tested under version 1.20.2)
 
 ----
 

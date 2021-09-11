@@ -5,8 +5,8 @@
 # Author: Cory Dunn
 # Institution: University of Helsinki
 # Author Email: cory.dunn@helsinki.fi
-# Version: 1.22
-version = '1.22'
+# Version: 1.21
+version = '1.21'
 # License: GPLv3
 
 from Bio import AlignIO
@@ -21,9 +21,6 @@ import argparse
 import gc
 import random
 import logging
-import matplotlib.pyplot as plt
-from matplotlib import rcParams
-from matplotlib.backends.backend_pdf import PdfPages
 
 # Define the calculation engine
 
@@ -179,22 +176,6 @@ if __name__ == "__main__" :
     entropylist_S = pd.Series(entropy_record)
     gap_fraction_S = pd.Series(gap_record)
 
-    # Plot gap fractions for alignment positions
-
-    gap_record.sort()
-    plotgaplistrange = np.arange(len(gap_record))
-    plt.plot(plotgaplistrange, gap_record, 'o', ms=1,c='slategrey')
-    plot_cutoff_label = 'Selected gap fraction cut-off: ' + str(gap_value_cutoff/100) + ' (' + str(gap_value_cutoff) + ' %)'
-    plt.axhline(y=gap_value_cutoff/100, color='teal', linestyle='--', label=plot_cutoff_label)
-    rcParams['font.family'] = 'sans-serif'
-    rcParams['font.sans-serif'] = ['Arial']
-    plt.xlabel('Input alignment column (Ordered by gap fraction)', fontsize=12)
-    plt.ylabel('Gap fraction', fontsize=12)
-    plt.legend()
-    plt.savefig(input_strip + '_gap_plot.pdf', format="pdf", bbox_inches="tight")
-    mylogs.info('Printed gap distribution of input alignment to file: ' + input_strip + '_gap_plot.pdf')
-    plt.close()
-
     # Generate boolean based upon gap values
 
     gap_value_cutoff_float = float(gap_value_cutoff/100)
@@ -320,23 +301,6 @@ if __name__ == "__main__" :
             CIQR = iqr * multiplier_on_interquartile_range
             lower_cutoff, upper_cutoff = q25 - CIQR, q75 + CIQR
 
-    # Plot comparison values, along with selected cut-off IQR cut-off value for full analysis
-
-            if number_in_small_test == depth_of_alignment:
-                entropy_DF_analysis_values_list.sort()
-                plotlistrange = np.arange(len(entropy_DF_analysis_values_list))
-                plt.plot(plotlistrange, entropy_DF_analysis_values_list, 'o', ms=1,c='darkgreen')
-                plot_cutoff_label = 'Selected IQR cut-off:  ' + str(multiplier_on_interquartile_range)
-                plt.axhline(y=upper_cutoff, color='red', linestyle='--', label=plot_cutoff_label)
-                rcParams['font.family'] = 'sans-serif'
-                rcParams['font.sans-serif'] = ['Arial']
-                plt.xlabel('Sequence', fontsize=12)
-                plt.ylabel('Median across pairwise comparisons (Ordered by median value)', fontsize=12)
-                plt.legend()
-                plt.savefig(input_strip + '_median_plot.pdf', format="pdf", bbox_inches="tight")
-                mylogs.info('Printed median values of sequence comparisons from full analysis to file ' + input_strip + '_median_plot.pdf')
-                plt.close()
-
     # Identify the outlier sequences using the interquartile range cutoff
 
             entropy_DF_analysis_above_cutoff = entropy_DF_analysis > upper_cutoff
@@ -359,6 +323,26 @@ if __name__ == "__main__" :
         first_column = entropy_DF.pop('Median_across_pairwise_comparisons')
         entropy_DF.insert(0,'Median_across_pairwise_comparisons',first_column)
         entropy_DF.to_csv(output_full_table)
+        
+        #  figure describing trials (NOT ACTIVE IN CURRENT VERSION)
+        # import matplotlib.pyplot as plt
+        # from matplotlib import rcParams
+        # rcParams['font.family'] = 'sans-serif'
+        # rcParams['font.sans-serif'] = ['Arial']
+        # fig, ax = plt.subplots()
+        # plt.figure(figsize=(8,8))
+        # plt.xlabel('Sequence number within input file', fontsize=12)
+        # plt.ylabel('Sequence number within input file', fontsize=12)
+        # if depth_of_alignment < 2000:
+        #    plotlabels = [i+1 for i in range(0,(depth_of_alignment-1),50)]
+        # if depth_of_alignment >= 2000:
+        #    plotlabels = [i+1 for i in range(0,(depth_of_alignment-1),500)]
+        # plt.xticks(ticks=plotlabels,rotation=60)
+        # plt.yticks(ticks=plotlabels)
+        # plt.imshow(entropy_DF,cmap='cividis',interpolation='nearest')
+        # plt.show
+        # plt.colorbar()
+        # plt.savefig(output_figure + '.pdf', dpi=600)
 
     # Prepare dataframe to generate FASTA files
 
@@ -373,21 +357,6 @@ if __name__ == "__main__" :
         
     frame = { 'Accession': acc_records_S, 'Sequence': sequence_records_S }
     FASTA_output_unclean_DF = pd.DataFrame(frame) 
-
-    # Plot trial results from sampling-based approach
-
-    if number_in_small_test != depth_of_alignment:
-        record_sequence_trial_results_list = record_sequence_trial_results['Fraction_positive'].tolist()
-        record_sequence_trial_results_list.sort()
-        plottrialrange = np.arange(len(record_sequence_trial_results_list))
-        plt.plot(plottrialrange, record_sequence_trial_results_list, 'o', ms=1,c='deepskyblue')
-        rcParams['font.family'] = 'sans-serif'
-        rcParams['font.sans-serif'] = ['Arial']
-        plt.xlabel('Sequence', fontsize=12)
-        plt.ylabel('Fraction of times sequence called aberrant (In order of increasing positive calls)', fontsize=12)
-        plt.savefig(input_strip + '_sampling_trials_plot.pdf', format="pdf", bbox_inches="tight")
-        mylogs.info('Printed plot of sampling trial results to file: ' + input_strip + '_sampling_trials_plot.pdf')
-        plt.close()
 
     # Generating clean dataframes
 
