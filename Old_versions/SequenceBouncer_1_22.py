@@ -5,8 +5,8 @@
 # Author: Cory Dunn
 # Institution: University of Helsinki
 # Author Email: cory.dunn@helsinki.fi
-# Version: 1.23
-version = '1.23'
+# Version: 1.22
+version = '1.22'
 # License: GPLv3
 
 from Bio import AlignIO
@@ -51,13 +51,12 @@ def engine():
     return entropy_array
 
 if __name__ == "__main__" :
-    
    
     # Load files, receive parameters, and provide assistance
 
     ap = argparse.ArgumentParser()
     ap.add_argument('-i','--input_file',required=True,type=str,help='Input file in FASTA format.\n')
-    ap.add_argument('-o','--output_file',required=False,type=str,default='X',help="Output filestem [do not include extensions] (default will be '<input_filestem>.ext').\n")
+    ap.add_argument('-o','--output_file',required=False,type=str,default='X',help="Output mylogs.info [do not include extensions] (default will be 'input_file.ext').\n")
     ap.add_argument('-g','--gap_percent_cut',required=False,type=float,default=2.0,help='For columns with a greater fraction of gaps than the selected value, expressed in percent, data will be ignored in calculations (default is 2).\n')
     ap.add_argument('-k','--IQR_coefficient',required=False,type=float,default=1.0,help='Coefficient multiplied by the interquartile range that helps to define an outlier sequence (default is 1.0).\n')
     ap.add_argument('-n','--subsample_size',required=False,type=int,default=0,help='|> Available for large alignments | The size of a single sample taken from the full dataset (default is entire alignment, but try a subsample size of 50 or 100 for large alignments).\n')
@@ -78,7 +77,6 @@ if __name__ == "__main__" :
     if output_entry == 'X':
         sep = '.'
         input_strip = input_sequence.split(sep, 1)[0]
-        output_entry = input_strip
         output_figure = input_strip + '_output_figure'
         output_sequence = input_strip + '_output_clean.fasta'
         output_rejected = input_strip + '_output_rejected.fasta'
@@ -101,7 +99,7 @@ if __name__ == "__main__" :
     stream.setFormatter(streamformat)
     mylogs.addHandler(stream)
 
-    file = logging.FileHandler(output_entry + '_output.log')
+    file = logging.FileHandler(input_strip + '_output.log')
     mylogs.addHandler(file)
     
     mylogs.info('\nSequenceBouncer: A method to remove outlier entries from a multiple sequence alignment\n')
@@ -193,8 +191,8 @@ if __name__ == "__main__" :
     plt.xlabel('Input alignment column (Ordered by gap fraction)', fontsize=12)
     plt.ylabel('Gap fraction', fontsize=12)
     plt.legend()
-    plt.savefig(output_entry + '_gap_plot.pdf', format="pdf", bbox_inches="tight")
-    mylogs.info('Printed gap distribution of input alignment to file: ' + output_entry + '_gap_plot.pdf')
+    plt.savefig(input_strip + '_gap_plot.pdf', format="pdf", bbox_inches="tight")
+    mylogs.info('Printed gap distribution of input alignment to file: ' + input_strip + '_gap_plot.pdf')
     plt.close()
 
     # Generate boolean based upon gap values
@@ -335,8 +333,8 @@ if __name__ == "__main__" :
                 plt.xlabel('Sequence', fontsize=12)
                 plt.ylabel('Median across pairwise comparisons (Ordered by median value)', fontsize=12)
                 plt.legend()
-                plt.savefig(output_entry + '_median_plot.pdf', format="pdf", bbox_inches="tight")
-                mylogs.info('Printed median values of sequence comparisons from full analysis to file ' + output_entry + '_median_plot.pdf')
+                plt.savefig(input_strip + '_median_plot.pdf', format="pdf", bbox_inches="tight")
+                mylogs.info('Printed median values of sequence comparisons from full analysis to file ' + input_strip + '_median_plot.pdf')
                 plt.close()
 
     # Identify the outlier sequences using the interquartile range cutoff
@@ -387,8 +385,8 @@ if __name__ == "__main__" :
         rcParams['font.sans-serif'] = ['Arial']
         plt.xlabel('Sequence', fontsize=12)
         plt.ylabel('Fraction of times sequence called aberrant (In order of increasing positive calls)', fontsize=12)
-        plt.savefig(output_entry + '_sampling_trials_plot.pdf', format="pdf", bbox_inches="tight")
-        mylogs.info('Printed plot of sampling trial results to file: ' + output_entry + '_sampling_trials_plot.pdf')
+        plt.savefig(input_strip + '_sampling_trials_plot.pdf', format="pdf", bbox_inches="tight")
+        mylogs.info('Printed plot of sampling trial results to file: ' + input_strip + '_sampling_trials_plot.pdf')
         plt.close()
 
     # Generating clean dataframes

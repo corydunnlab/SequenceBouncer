@@ -1,5 +1,5 @@
 SequenceBouncer
-Version: 1.23
+Version: 1.22
 
 ----
 
