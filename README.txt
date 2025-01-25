@@ -8,7 +8,7 @@ Author:
 Cory Dunn
 Institute of Biotechnology
 University of Helsinki
-Email: cory.dunn@helsinki.fi
+Email: cory.david.dunn@gmail.com
 
 ----
 
@@ -20,7 +20,7 @@ GPLv3
 
 Please cite: 
 
-C.D. Dunn. SequenceBouncer: A method to remove outlier entries from a multiple sequence alignment. bioRxiv. doi:10.1101/2020.11.24.395459.
+C.D. Dunn. (2020). SequenceBouncer: A method to remove outlier entries from a multiple sequence alignment. bioRxiv pre-print at: https://www.biorxiv.org/content/10.1101/2020.11.24.395459v2
 
 ----
 
