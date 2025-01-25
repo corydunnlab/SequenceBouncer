@@ -1,14 +1,12 @@
 SequenceBouncer
-Version: 1.23
+Version: 1.24
 
 ----
 
 Author:
 
 Cory Dunn
-Institute of Biotechnology
-University of Helsinki
-Email: cory.david.dunn@gmail.com
+Contact: cory.david.dunn@gmail.com
 
 ----
 
