@@ -3,10 +3,9 @@
 
 # Funding received from the Sigrid Jusélius Foundation contributed to the development of this software.
 # Author: Cory Dunn
-# Institution: University of Helsinki
-# Author Email: cory.dunn@helsinki.fi
-# Version: 1.23
-version = '1.23'
+# Author Email: cory.david.dunn@gmail.com
+# Version: 1.24
+version = '1.24'
 # License: GPLv3
 
 from Bio import AlignIO
@@ -106,8 +105,7 @@ if __name__ == "__main__" :
     
     mylogs.info('\nSequenceBouncer: A method to remove outlier entries from a multiple sequence alignment\n')
     mylogs.info('Cory Dunn')
-    mylogs.info('University of Helsinki')
-    mylogs.info('cory.dunn@helsinki.fi')
+    mylogs.info('Contact : cory.david.dunn@gmail.com')
     mylogs.info('Version: ' + version)
     mylogs.info('Please cite DOI: 10.1101/2020.11.24.395459')
     mylogs.info('___\n')
@@ -171,7 +169,7 @@ if __name__ == "__main__" :
         column_fractions_S = sequence_dataframe[i].value_counts(normalize='True')
         shannon_entropy_column = 0
         gap_fraction_column = 0
-        for character, val in  column_fractions_S.iteritems():
+        for character, val in  column_fractions_S.items():
             shannon_entropy_column +=  val * math.log(val,2)
             if character == 45:
                 gap_fraction_column = val
