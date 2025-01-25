@@ -4,12 +4,10 @@
 # Funding received from the Sigrid Jusélius Foundation contributed to the development of this software.
 # Author: Cory Dunn
 # Author Email: cory.david.dunn@gmail.com
-# Version: 1.24
-version = '1.24'
+# Version: 1.25
+version = '1.25'
 # License: GPLv3
 
-from Bio import AlignIO
-from Bio.Align import AlignInfo
 from Bio import SeqIO
 import pandas as pd
 import numpy as np
@@ -38,9 +36,8 @@ def engine():
                 for counter_y in range((counter_x+1)):
                     counter_y_numpy_row = table_sample_numpy[counter_y:(counter_y+1),:]
                     comparison_bool_series_match = counter_x_numpy_row == counter_y_numpy_row
-                    comparison_bool_series_NOT_match = counter_x_numpy_row != counter_y_numpy_row
                     entropy_record_match = entropy_record_numpy[(comparison_bool_series_match)]
-                    entropy_record_NOT_match = entropy_record_numpy[(comparison_bool_series_NOT_match)]
+                    entropy_record_NOT_match = np.logical_not(entropy_record_match)
                     match_entropy_total = entropy_record_match.sum(axis=0)
                     NOT_match_entropy_minus_max_entropy = entropy_record_NOT_match - max_entropy_after_gaps
                     NOT_match_entropy_total =  NOT_match_entropy_minus_max_entropy.sum(axis=0)
@@ -186,10 +183,10 @@ if __name__ == "__main__" :
     plt.plot(plotgaplistrange, gap_record, 'o', ms=1,c='slategrey')
     plot_cutoff_label = 'Selected gap fraction cut-off: ' + str(gap_value_cutoff/100) + ' (' + str(gap_value_cutoff) + ' %)'
     plt.axhline(y=gap_value_cutoff/100, color='teal', linestyle='--', label=plot_cutoff_label)
-    rcParams['font.family'] = 'sans-serif'
-    rcParams['font.sans-serif'] = ['Arial']
-    plt.xlabel('Input alignment column (Ordered by gap fraction)', fontsize=12)
-    plt.ylabel('Gap fraction', fontsize=12)
+    #rcParams['font.family'] = 'sans-serif'
+    #rcParams['font.sans-serif'] = ['Arial']
+    plt.xlabel('Input alignment column (Ordered by gap fraction)', fontsize=8)
+    plt.ylabel('Gap fraction', fontsize=8)
     plt.legend()
     plt.savefig(output_entry + '_gap_plot.pdf', format="pdf", bbox_inches="tight")
     mylogs.info('Printed gap distribution of input alignment to file: ' + output_entry + '_gap_plot.pdf')
@@ -283,8 +280,7 @@ if __name__ == "__main__" :
                 number_to_choose = length_sequence_dataframe_gap_considered_max_keep
             
             table_sample = sequence_dataframe_gap_considered_max_keep.iloc[0:number_to_choose,:]
-            table_sample_numpy = table_sample.to_numpy() # convert pandas dataframe to numpy array
-            table_sample_numpy = table_sample_numpy.astype(np.int8) # change datatype in an attempt to reduce memory immylogs.info
+            table_sample_numpy = table_sample.to_numpy()
             table_sample_numpy_rows, table_sample_numpy_columns = table_sample_numpy.shape
         
         # Initiate numpy array for entropy calculation values
@@ -328,10 +324,10 @@ if __name__ == "__main__" :
                 plt.plot(plotlistrange, entropy_DF_analysis_values_list, 'o', ms=1,c='darkgreen')
                 plot_cutoff_label = 'Selected IQR cut-off:  ' + str(multiplier_on_interquartile_range)
                 plt.axhline(y=upper_cutoff, color='red', linestyle='--', label=plot_cutoff_label)
-                rcParams['font.family'] = 'sans-serif'
-                rcParams['font.sans-serif'] = ['Arial']
-                plt.xlabel('Sequence', fontsize=12)
-                plt.ylabel('Median across pairwise comparisons (Ordered by median value)', fontsize=12)
+                #rcParams['font.family'] = 'sans-serif'
+                #rcParams['font.sans-serif'] = ['Arial']
+                plt.xlabel('Sequence', fontsize=8)
+                plt.ylabel('Median across pairwise comparisons', fontsize=8)
                 plt.legend()
                 plt.savefig(output_entry + '_median_plot.pdf', format="pdf", bbox_inches="tight")
                 mylogs.info('Printed median values of sequence comparisons from full analysis to file ' + output_entry + '_median_plot.pdf')
@@ -381,10 +377,10 @@ if __name__ == "__main__" :
         record_sequence_trial_results_list.sort()
         plottrialrange = np.arange(len(record_sequence_trial_results_list))
         plt.plot(plottrialrange, record_sequence_trial_results_list, 'o', ms=1,c='deepskyblue')
-        rcParams['font.family'] = 'sans-serif'
-        rcParams['font.sans-serif'] = ['Arial']
+        #rcParams['font.family'] = 'sans-serif'
+        #rcParams['font.sans-serif'] = ['Arial']
         plt.xlabel('Sequence', fontsize=12)
-        plt.ylabel('Fraction of times sequence called aberrant (In order of increasing positive calls)', fontsize=12)
+        plt.ylabel('Fraction of times sequence called aberrant', fontsize=8)
         plt.savefig(output_entry + '_sampling_trials_plot.pdf', format="pdf", bbox_inches="tight")
         mylogs.info('Printed plot of sampling trial results to file: ' + output_entry + '_sampling_trials_plot.pdf')
         plt.close()

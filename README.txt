@@ -1,5 +1,5 @@
 SequenceBouncer
-Version: 1.24
+Version: 1.25
 
 ----
 
@@ -16,6 +16,10 @@ GPLv3
 
 ----
 
+Phylogenetic analyses can take advantage of multiple sequence alignments as input. These alignments typically consist of homologous nucleic acid or protein sequences, and the inclusion of outlier or aberrant sequences can compromise downstream analyses. SequenceBouncer uses the Shannon entropy values of alignment columns to identify, then quickly and reproducibly remove, outlier entries in a manner responsive to overall alignment context.
+
+----
+
 Please cite: 
 
 C.D. Dunn. (2020). SequenceBouncer: A method to remove outlier entries from a multiple sequence alignment. bioRxiv pre-print at: https://www.biorxiv.org/content/10.1101/2020.11.24.395459v2
@@ -24,20 +28,20 @@ C.D. Dunn. (2020). SequenceBouncer: A method to remove outlier entries from a mu
 
 Acknowledgements:
 
-Funding received from the Sigrid Jusélius Foundation contributed to the development of this software. The author thanks Ed Davis, Oregon State University, for suggestions.
+Funding received from the Sigrid Jusélius Foundation contributed to the development of this software. The author thanks Ed Davis, Oregon State University, for helpful suggestions.
 
 ----
 
 Requirements:
 
-SequenceBouncer is implemented in Python 3 (current version tested under Python version 3.9.4) 
+SequenceBouncer is implemented in Python 3 (current version tested under Python version 3.12.8) 
 
 Dependencies: 
 
-Biopython (tested under version 1.78),
-Pandas (tested under version 1.2.4),
-Numpy (tested under version 1.20.2),
-Matplotlib (tested under version 3.4.2)
+Biopython (tested under version 1.85),
+Pandas (tested under version 2.2.3),
+Numpy (tested under version 1.26.4),
+Matplotlib (tested under version 3.10.0)
 
 ----
 
