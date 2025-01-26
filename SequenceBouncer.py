@@ -4,22 +4,24 @@
 # Funding received from the Sigrid Jusélius Foundation contributed to the development of this software.
 # Author: Cory Dunn
 # Author Email: cory.david.dunn@gmail.com
-# Version: 1.25
-version = '1.25'
+# Version: 1.3
+version = '1.3'
 # License: GPLv3
 
+from Bio import AlignIO
+from Bio.Align import AlignInfo
 from Bio import SeqIO
 import pandas as pd
 import numpy as np
 import time
-import sys
+import os
 import math
 import argparse
 import gc
 import random
 import logging
 import matplotlib.pyplot as plt
-from matplotlib import rcParams
+#from matplotlib import rcParams
 from matplotlib.backends.backend_pdf import PdfPages
 
 # Define the calculation engine
@@ -36,8 +38,10 @@ def engine():
                 for counter_y in range((counter_x+1)):
                     counter_y_numpy_row = table_sample_numpy[counter_y:(counter_y+1),:]
                     comparison_bool_series_match = counter_x_numpy_row == counter_y_numpy_row
+                    comparison_bool_series_NOT_match = ~comparison_bool_series_match
+                    #comparison_bool_series_NOT_match = counter_x_numpy_row != counter_y_numpy_row
                     entropy_record_match = entropy_record_numpy[(comparison_bool_series_match)]
-                    entropy_record_NOT_match = np.logical_not(entropy_record_match)
+                    entropy_record_NOT_match = entropy_record_numpy[(comparison_bool_series_NOT_match)]
                     match_entropy_total = entropy_record_match.sum(axis=0)
                     NOT_match_entropy_minus_max_entropy = entropy_record_NOT_match - max_entropy_after_gaps
                     NOT_match_entropy_total =  NOT_match_entropy_minus_max_entropy.sum(axis=0)
@@ -70,6 +74,10 @@ if __name__ == "__main__" :
     gap_value_cutoff = args['gap_percent_cut']
     output_entry = args['output_file']
     seed = args['random_seed']
+
+    WD = os.getcwd()
+    os.system('mkdir ' + WD + '/output/')
+    output_directory = WD + '/output/'
 
     if output_entry == 'X':
         sep = '.'
@@ -185,7 +193,7 @@ if __name__ == "__main__" :
     plt.axhline(y=gap_value_cutoff/100, color='teal', linestyle='--', label=plot_cutoff_label)
     #rcParams['font.family'] = 'sans-serif'
     #rcParams['font.sans-serif'] = ['Arial']
-    plt.xlabel('Input alignment column (Ordered by gap fraction)', fontsize=8)
+    plt.xlabel('Input alignment column', fontsize=8)
     plt.ylabel('Gap fraction', fontsize=8)
     plt.legend()
     plt.savefig(output_entry + '_gap_plot.pdf', format="pdf", bbox_inches="tight")
@@ -280,7 +288,8 @@ if __name__ == "__main__" :
                 number_to_choose = length_sequence_dataframe_gap_considered_max_keep
             
             table_sample = sequence_dataframe_gap_considered_max_keep.iloc[0:number_to_choose,:]
-            table_sample_numpy = table_sample.to_numpy()
+            table_sample_numpy = table_sample.to_numpy() # convert pandas dataframe to numpy array
+            table_sample_numpy = table_sample_numpy.astype(np.int8) # change datatype in an attempt to reduce memory immylogs.info
             table_sample_numpy_rows, table_sample_numpy_columns = table_sample_numpy.shape
         
         # Initiate numpy array for entropy calculation values
@@ -354,7 +363,7 @@ if __name__ == "__main__" :
         entropy_DF['Median_across_pairwise_comparisons'] = entropy_DF.median(axis=1) # add column calculating median across pairwise comparisons
         first_column = entropy_DF.pop('Median_across_pairwise_comparisons')
         entropy_DF.insert(0,'Median_across_pairwise_comparisons',first_column)
-        entropy_DF.to_csv(output_full_table)
+        entropy_DF.to_csv(output_directory + output_full_table)
 
     # Prepare dataframe to generate FASTA files
 
@@ -377,10 +386,10 @@ if __name__ == "__main__" :
         record_sequence_trial_results_list.sort()
         plottrialrange = np.arange(len(record_sequence_trial_results_list))
         plt.plot(plottrialrange, record_sequence_trial_results_list, 'o', ms=1,c='deepskyblue')
-        #rcParams['font.family'] = 'sans-serif'
-        #rcParams['font.sans-serif'] = ['Arial']
-        plt.xlabel('Sequence', fontsize=12)
-        plt.ylabel('Fraction of times sequence called aberrant', fontsize=8)
+        rcParams['font.family'] = 'sans-serif'
+        rcParams['font.sans-serif'] = ['Arial']
+        plt.xlabel('Sequence', fontsize=8)
+        plt.ylabel('Fraction of times sequence called aberrant (In order of increasing positive calls)', fontsize=8)
         plt.savefig(output_entry + '_sampling_trials_plot.pdf', format="pdf", bbox_inches="tight")
         mylogs.info('Printed plot of sampling trial results to file: ' + output_entry + '_sampling_trials_plot.pdf')
         plt.close()
@@ -410,7 +419,7 @@ if __name__ == "__main__" :
     FASTA_output_final_acc_list = FASTA_output_clean_DF.loc[:,'Accession'].values.tolist()
     FASTA_output_final_seq_list = FASTA_output_clean_DF.loc[:,'Sequence'].values.tolist()
 
-    ofile = open(output_sequence, "w")
+    ofile = open(output_directory + output_sequence, "w")
         
     for seqi in range(len(FASTA_output_final_acc_list)):
         ofile.write(">" + FASTA_output_final_acc_list[seqi] + "\n" + FASTA_output_final_seq_list[seqi] + "\n")
@@ -423,7 +432,7 @@ if __name__ == "__main__" :
     FASTA_output_rejected_acc_list = FASTA_output_reject_DF.loc[:,'Accession'].values.tolist()
     FASTA_output_rejected_seq_list = FASTA_output_reject_DF.loc[:,'Sequence'].values.tolist()
         
-    ofile = open(output_rejected, "w")
+    ofile = open(output_directory + output_rejected, "w")
     for seqi in range(len(FASTA_output_rejected_acc_list)):
         ofile.write(">" + FASTA_output_rejected_acc_list[seqi] + "\n" + FASTA_output_rejected_seq_list[seqi] + "\n")
     ofile.close()
@@ -445,7 +454,7 @@ if __name__ == "__main__" :
         del record_sequence_trial_results['Outlier_instances']
         del record_sequence_trial_results['Fraction_positive']
 
-    record_sequence_trial_results.to_csv(output_tabular,index=False)
+    record_sequence_trial_results.to_csv(output_directory + output_tabular,index=False)
 
     # Provide total runtime
 
