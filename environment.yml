@@ -1,0 +1,17 @@
+name: sequencebouncer
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - numpy=1.26.4
+  - pandas=2.2.3
+  - biopython=1.85
+  - matplotlib=3.10.0
+  - pytorch
+  - pytorch-cuda=12.4
+  - pip
+  - pip:
+      # Optional: any extra pip-only libraries if needed
