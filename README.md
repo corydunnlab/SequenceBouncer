@@ -8,13 +8,13 @@ Version 2.0 introduces **GPU (PyTorch CUDA) acceleration**, **multi-core CPU par
 
 ## Key Features in Version 2.0
 
-*   🚀 **1000x+ Speedups:** Replaced nested loops with vectorized linear algebra (one-hot matrix multiplication), reducing calculations that originally took days to minutes or seconds.
-*   ⚡ **GPU Acceleration:** Offloads heavy matrix multiplications to NVIDIA Tensor Cores using PyTorch CUDA.
-*   💻 **Multi-Threaded CPU Parallelism:** Automatically utilizes optimized CPU BLAS backends (MKL, OpenBLAS) for parallelized CPU calculations.
-*   🧠 **Memory-Aware Fallback:** Checks available GPU VRAM and CPU RAM before execution. If a full analysis exceeds GPU memory, it automatically falls back to CPU RAM rather than dropping to sampling mode, and warns the user.
-*   🎛️ **Thread & Device Control:** Allows users to explicitly limit CPU cores (`-c`/`--cores`) and select hardware targets (`-d`/`--device`).
-*   📊 **Real-time Progress Bars:** Displays visual status indicators using `tqdm` for sequence loading and sampling trials.
-*   📂 **Clean Output Directory Structure:** Writes all FASTA, CSV tables, logs, and PDF figures cleanly to an `output/` directory.
+*   **1000x+ Speedups:** Replaced nested loops with vectorized linear algebra (one-hot matrix multiplication), reducing calculations that originally took days to minutes or seconds.
+*   **GPU Acceleration:** Offloads heavy matrix multiplications to NVIDIA Tensor Cores using PyTorch CUDA.
+*   **Multi-Threaded CPU Parallelism:** Automatically utilizes optimized CPU BLAS backends (MKL, OpenBLAS) for parallelized CPU calculations.
+*   **Memory-Aware Fallback:** Checks available GPU VRAM and CPU RAM before execution. If a full analysis exceeds GPU memory, it automatically falls back to CPU RAM rather than dropping to sampling mode, and warns the user.
+*   **Thread & Device Control:** Allows users to explicitly limit CPU cores (`-c`/`--cores`) and select hardware targets (`-d`/`--device`).
+*   **Real-time Progress Bars:** Displays visual status indicators using `tqdm` for sequence loading and sampling trials.
+*   **Clean Output Directory Structure:** Writes all FASTA, CSV tables, logs, and PDF figures cleanly to an `output/` directory.
 
 ---
 
