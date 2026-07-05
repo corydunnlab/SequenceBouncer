@@ -103,13 +103,13 @@ python SequenceBouncer.py -i 1b_mammalian_mtDNA_input_alignment.fasta -k 1.75 -g
 ### 2. Large Alignment (Forced CPU Full Analysis)
 Forces full analysis using exactly 8 CPU cores:
 ```bash
-python SequenceBouncer.py -i zenodo_data/2b_bird_COI-5P_barcodes_input_alignment.fasta -d cpu -c 8
+python SequenceBouncer.py -i 2b_bird_COI-5P_barcodes_input_alignment.fasta -d cpu -c 8
 ```
 
 ### 3. Extremely Large Alignment (GPU Sampling Analysis)
 Runs a sampling-based analysis on the GPU with 10 trials and a subsample size of 100:
 ```bash
-python SequenceBouncer.py -i zenodo_data/3b_COVID-19_input_alignment.fasta -n 100 -t 10 -s 2
+python SequenceBouncer.py -i 3b_COVID-19_input_alignment.fasta -n 100 -t 10 -s 2
 ```
 
 ---
