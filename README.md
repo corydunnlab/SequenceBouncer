@@ -18,6 +18,29 @@ Version 2.0 introduces **GPU (PyTorch CUDA) acceleration**, **multi-core CPU par
 
 ---
 
+## Key Changes Since Version 1.0
+
+*   **Site-Conservation Weighted Distance (SCWD):** 
+    *   *Then:* The original scoring formula used $H_c$ and $H_c - H_{max}$, which algebraically cancelled out in the outlier inequality, reducing the calculation to unweighted Hamming distance.
+    *   *Now:* Introduced a biologically realistic, weighted distance metric where mismatches at conserved sites are penalized up to 100x more than at variable loops.
+*   **GPU (PyTorch CUDA/MPS) Acceleration:** 
+    *   *Then:* Pairwise comparisons were executed using nested Python loops, taking hours or days for alignments with $>2,000$ sequences.
+    *   *Now:* Sequence comparisons are vectorized using one-hot matrix multiplications offloaded to the GPU, completing in milliseconds or seconds.
+*   **Resource-Aware Memory Safety:** 
+    *   *Then:* Running large datasets often resulted in out-of-memory (OOM) crashes or required manual sampling calculations.
+    *   *Now:* Automatically calculates memory safety boundaries ($N_{safe}$) for GPU and CPU RAM, choosing the optimal hardware target and automatically scaling subsample sizes ($n_{opt}$) and trials ($t_{opt}$) if memory is exceeded.
+*   **Native Gzip Support:** 
+    *   *Then:* Compressed FASTA alignments (`.gz`) had to be extracted manually before running.
+    *   *Now:* Automatically detects, decompresses, and compresses `.gz` alignments on the fly, saving up to 90% in disk space.
+*   **Exposed Entropy Smoothing Factor (`-e`/`--entropy_smoothing`):** 
+    *   *Then:* No weighting adjustments existed.
+    *   *Now:* Added a customizable pseudocount $\epsilon$ (default `0.01`) that lets users control the scaling ratio between conserved and variable sites, preventing false-positive rejections.
+*   **Independent Shuffling in Trials:** 
+    *   *Then:* Sampling trials used a constant seed for every loop iteration, causing identical row-shuffling across trials.
+    *   *Now:* Utilizes a NumPy Generator to ensure independent, unique row shuffling per trial while maintaining reproducibility.
+
+---
+
 ## Requirements & Installation
 
 SequenceBouncer 2.0 is designed for Python 3.12+ and runs on Linux, macOS, and Windows.
