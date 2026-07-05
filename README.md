@@ -64,11 +64,11 @@ conda activate sequencebouncer
 ## Usage
 
 ```bash
-python SequenceBouncer.py -i <input_fasta> [options]
+python SequenceBouncer.py -i <input_alignment> [options]
 ```
 
 ### Required Arguments:
-*   `-i INPUT_FILE`, `--input_file INPUT_FILE`: Input multiple sequence alignment file in FASTA format.
+*   `-i INPUT_FILE`, `--input_file INPUT_FILE`: Input multiple sequence alignment file in FASTA or A3M format (supports `.fasta`, `.fasta.gz`, `.a3m`, or `.a3m.gz`).
 
 ### Optional Arguments:
 *   `-o OUTPUT_FILE`, `--output_file OUTPUT_FILE`: Output filestem [do not include extensions] (default is `<input_filestem>`).
@@ -87,7 +87,7 @@ python SequenceBouncer.py -i <input_fasta> [options]
     *   `cpu`: Forces CPU calculation (using multi-threaded PyTorch CPU or NumPy).
     *   `cuda` or `gpu`: Forces GPU calculation, exiting with an error if CUDA is unavailable or VRAM is insufficient.
 *   `-u`, `--unweighted`: Disable position-based inverse-entropy weighting and use standard unweighted Hamming distance (matching the original paper's behavior).
-*   `-z`, `--gzip`: Force output clean and rejected FASTA files to be written in compressed gzip format (`.fasta.gz`), even if the input was uncompressed.
+*   `-z`, `--gzip`: Force output clean and rejected alignment files to be written in compressed gzip format (`.fasta.gz` or `.a3m.gz`), even if the input was uncompressed.
 *   `-e ENTROPY_SMOOTHING`, `--entropy_smoothing ENTROPY_SMOOTHING`: Smoothing factor (pseudocount) added to Shannon entropy calculation to prevent division-by-zero and control position weighting strength (default is `0.01`). Higher values (e.g. `0.1` or `0.2`) soften the penalty assessed on conserved sites, protecting unusual but functional sequences from false rejection.
 
 ---
@@ -117,8 +117,8 @@ python SequenceBouncer.py -i 3b_COVID-19_input_alignment.fasta -n 100 -t 10 -s 2
 ## Output Files
 
 All output files are saved in the `output/` directory:
-*   `output/<filestem>_output_clean.fasta`: Contains the clean alignment with outlier sequences removed.
-*   `output/<filestem>_output_rejected.fasta`: Contains the rejected outlier sequences.
+*   `output/<filestem>_output_clean.fasta` (or `.a3m`): Contains the clean alignment with outlier sequences removed.
+*   `output/<filestem>_output_rejected.fasta` (or `.a3m`): Contains the rejected outlier sequences.
 *   `output/<filestem>_output_analysis.csv`: Tabular details showing total trials, positive outlier calls, and retention status.
 *   `output/<filestem>_output.log`: Command logs and execution runtimes.
 *   `output/<filestem>_gap_plot.pdf`: Plot showing gap fraction distribution across columns.

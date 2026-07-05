@@ -37,8 +37,91 @@ os.environ["VECLIB_MAXIMUM_THREADS"] = str(cores)
 
 # Now safe to import pandas, numpy, torch, etc.
 from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 import pandas as pd
 import numpy as np
+
+def parse_a3m_file(filepath):
+    import gzip
+    
+    # Read raw records (header, sequence)
+    raw_records = []
+    open_func = gzip.open if filepath.endswith('.gz') else open
+    mode = "rt" if filepath.endswith('.gz') else "r"
+    
+    with open_func(filepath, mode) as f:
+        current_header = None
+        current_seq = []
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith('>'):
+                if current_header is not None:
+                    raw_records.append((current_header, "".join(current_seq)))
+                current_header = line[1:]
+                current_seq = []
+            else:
+                current_seq.append(line)
+        if current_header is not None:
+            raw_records.append((current_header, "".join(current_seq)))
+            
+    if not raw_records:
+        return []
+        
+    # The first sequence is the query template
+    query_name, query_seq_str = raw_records[0]
+    L_q = len(query_seq_str)
+    
+    # Parse all sequences
+    all_template_residues = []
+    all_insertions = []
+    
+    for name, seq_str in raw_records:
+        template_res = []
+        inserts = [[] for _ in range(L_q + 1)]
+        curr_temp = 0
+        for char in seq_str:
+            if char.islower():
+                # Insertion relative to query
+                inserts[curr_temp].append(char.upper())
+            else:
+                template_res.append(char)
+                curr_temp += 1
+        # Pad template residues if the sequence was truncated or malformed
+        while len(template_res) < L_q:
+            template_res.append('-')
+        all_template_residues.append(template_res)
+        all_insertions.append(inserts)
+        
+    # Find max insertion length at each position j across all sequences
+    max_lens = [0] * (L_q + 1)
+    for j in range(L_q + 1):
+        max_lens[j] = max(len(all_insertions[i][j]) for i in range(len(raw_records)))
+        
+    # Reconstruct expanded sequences of uniform length L
+    expanded_records = []
+    for i in range(len(raw_records)):
+        name, _ = raw_records[i]
+        seq_parts = []
+        for j in range(L_q):
+            # Add padded insertion before template position j
+            pad_len = max_lens[j] - len(all_insertions[i][j])
+            seq_parts.extend(all_insertions[i][j])
+            seq_parts.extend(['-'] * pad_len)
+            # Add template residue j
+            seq_parts.append(all_template_residues[i][j])
+            
+        # Add padded insertion after the last template position
+        pad_len = max_lens[L_q] - len(all_insertions[i][L_q])
+        seq_parts.extend(all_insertions[i][L_q])
+        seq_parts.extend(['-'] * pad_len)
+        
+        rec = SeqRecord(Seq("".join(seq_parts)), id=name, name=name, description="")
+        expanded_records.append(rec)
+        
+    return expanded_records
 import time
 import argparse
 import gc
@@ -358,6 +441,7 @@ if __name__ == "__main__":
     output_tabular = output_entry + "_output_analysis.csv"
     output_full_table = output_entry + "_full_comparison_table.csv"
 
+    is_a3m = input_sequence.endswith(".a3m") or input_sequence.endswith(".a3m.gz")
     is_gzip = (
         gzip_flag or input_sequence.endswith(".gz") or output_entry.endswith(".gz")
     )
@@ -365,11 +449,11 @@ if __name__ == "__main__":
         output_entry = output_entry[:-3]
 
     if is_gzip:
-        output_sequence = output_entry + "_output_clean.fasta.gz"
-        output_rejected = output_entry + "_output_rejected.fasta.gz"
+        output_sequence = output_entry + ("_output_clean.a3m.gz" if is_a3m else "_output_clean.fasta.gz")
+        output_rejected = output_entry + ("_output_rejected.a3m.gz" if is_a3m else "_output_rejected.fasta.gz")
     else:
-        output_sequence = output_entry + "_output_clean.fasta"
-        output_rejected = output_entry + "_output_rejected.fasta"
+        output_sequence = output_entry + ("_output_clean.a3m" if is_a3m else "_output_clean.fasta")
+        output_rejected = output_entry + ("_output_rejected.a3m" if is_a3m else "_output_rejected.fasta")
 
     # Setup paths inside output_directory to avoid cluttering the workspace
     log_file_path = os.path.join(output_directory, output_entry + "_output.log")
@@ -416,16 +500,21 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    # Load sequences (support gzip)
+    # Load sequences (support gzip and a3m)
     alignment_record_name_list = []
-    if input_sequence.endswith(".gz"):
-        import gzip
-
-        with gzip.open(input_sequence, "rt") as f:
-            records = list(SeqIO.parse(f, "fasta"))
+    is_a3m = input_sequence.endswith('.a3m') or input_sequence.endswith('.a3m.gz')
+    
+    if is_a3m:
+        records = parse_a3m_file(input_sequence)
     else:
-        with open(input_sequence, "r") as f:
-            records = list(SeqIO.parse(f, "fasta"))
+        if input_sequence.endswith(".gz"):
+            import gzip
+
+            with gzip.open(input_sequence, "rt") as f:
+                records = list(SeqIO.parse(f, "fasta"))
+        else:
+            with open(input_sequence, "r") as f:
+                records = list(SeqIO.parse(f, "fasta"))
 
     alignment_record_name_list = [record.name for record in records]
     depth_of_alignment = len(alignment_record_name_list)
@@ -897,15 +986,18 @@ if __name__ == "__main__":
         / record_sequence_trial_results["Total_trials"]
     )
 
-    # Reload sequences from FASTA (support gzip)
-    if input_sequence.endswith(".gz"):
-        import gzip
-
-        with gzip.open(input_sequence, "rt") as f:
-            records = list(SeqIO.parse(f, "fasta"))
+    # Reload sequences from FASTA (support gzip and a3m)
+    if is_a3m:
+        records = parse_a3m_file(input_sequence)
     else:
-        with open(input_sequence, "r") as f:
-            records = list(SeqIO.parse(f, "fasta"))
+        if input_sequence.endswith(".gz"):
+            import gzip
+
+            with gzip.open(input_sequence, "rt") as f:
+                records = list(SeqIO.parse(f, "fasta"))
+        else:
+            with open(input_sequence, "r") as f:
+                records = list(SeqIO.parse(f, "fasta"))
     record_seqs = [str(record.seq) for record in records]
     frame = {"Accession": alignment_record_name_list, "Sequence": record_seqs}
     FASTA_output_unclean_DF = pd.DataFrame(frame)
@@ -948,11 +1040,9 @@ if __name__ == "__main__":
     FASTA_output_clean_DF = FASTA_output_unclean_DF.loc[clean_mask]
     FASTA_output_reject_DF = FASTA_output_unclean_DF.loc[~clean_mask]
 
-    # Save clean FASTA file
-    mylogs.info("Writing cleaned alignment as FASTA.")
+    # Save clean alignment file
+    mylogs.info("Writing cleaned alignment.")
     mylogs.info(FASTA_output_clean_DF)
-    FASTA_output_final_acc_list = FASTA_output_clean_DF["Accession"].tolist()
-    FASTA_output_final_seq_list = FASTA_output_clean_DF["Sequence"].tolist()
 
     def open_fasta_out(filepath):
         if filepath.endswith(".gz"):
@@ -961,21 +1051,52 @@ if __name__ == "__main__":
             return gzip.open(filepath, "wt")
         return open(filepath, "w")
 
-    with open_fasta_out(os.path.join(output_directory, output_sequence)) as ofile:
-        for acc, seq in zip(FASTA_output_final_acc_list, FASTA_output_final_seq_list):
-            ofile.write(f">{acc}\n{seq}\n")
+    def write_a3m(records_to_write, filepath):
+        if not records_to_write:
+            return
+        template_rec = records_to_write[0]
+        template_seq = str(template_rec.seq)
+        L_temp = len(template_seq)
+        is_ins = [c == '-' for c in template_seq]
+        
+        with open_fasta_out(filepath) as ofile:
+            clean_temp_seq = "".join([template_seq[c] for c in range(L_temp) if not is_ins[c]])
+            ofile.write(f">{template_rec.id}\n{clean_temp_seq}\n")
+            for record in records_to_write[1:]:
+                seq_str = str(record.seq)
+                a3m_chars = []
+                for c in range(L_temp):
+                    char = seq_str[c]
+                    if is_ins[c]:
+                        if char != '-':
+                            a3m_chars.append(char.lower())
+                    else:
+                        a3m_chars.append(char.upper())
+                ofile.write(f">{record.id}\n{''.join(a3m_chars)}\n")
 
-    # Save rejected FASTA file
-    mylogs.info("Writing rejected sequences to FASTA.")
+    def save_fasta_or_a3m(records_to_write, filepath):
+        if filepath.endswith('.a3m') or filepath.endswith('.a3m.gz'):
+            write_a3m(records_to_write, filepath)
+        else:
+            with open_fasta_out(filepath) as ofile:
+                for record in records_to_write:
+                    ofile.write(f">{record.id}\n{str(record.seq)}\n")
+
+    clean_records = [
+        SeqRecord(Seq(row['Sequence']), id=row['Accession'], name=row['Accession'], description="")
+        for _, row in FASTA_output_clean_DF.iterrows()
+    ]
+    save_fasta_or_a3m(clean_records, os.path.join(output_directory, output_sequence))
+
+    # Save rejected alignment file
+    mylogs.info("Writing rejected sequences.")
     mylogs.info(FASTA_output_reject_DF)
-    FASTA_output_rejected_acc_list = FASTA_output_reject_DF["Accession"].tolist()
-    FASTA_output_rejected_seq_list = FASTA_output_reject_DF["Sequence"].tolist()
-
-    with open_fasta_out(os.path.join(output_directory, output_rejected)) as ofile:
-        for acc, seq in zip(
-            FASTA_output_rejected_acc_list, FASTA_output_rejected_seq_list
-        ):
-            ofile.write(f">{acc}\n{seq}\n")
+    
+    rejected_records = [
+        SeqRecord(Seq(row['Sequence']), id=row['Accession'], name=row['Accession'], description="")
+        for _, row in FASTA_output_reject_DF.iterrows()
+    ]
+    save_fasta_or_a3m(rejected_records, os.path.join(output_directory, output_rejected))
 
     # Save analysis file as CSV
     record_sequence_trial_results["Selected_for_retention"] = np.where(
