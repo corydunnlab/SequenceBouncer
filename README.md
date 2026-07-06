@@ -81,7 +81,7 @@ python SequenceBouncer.py -i <input_alignment> [options]
     *   `2`: Moderate stringency (retain sequences positive in $\le 50\%$ of trials).
     *   `3`: Maximum stringency (retain sequences positive in $0\%$ of trials).
 *   `-r RANDOM_SEED`, `--random_seed RANDOM_SEED`: Integer seed for reproducible sampling-based shuffles.
-*   `-c CORES`, `--cores CORES`: Maximum CPU threads/cores to use for CPU calculations. Defaults to **Available Cores - 4** to keep the host system responsive.
+*   `-c CORES`, `--cores CORES`: Maximum CPU threads/cores to use for CPU calculations. Defaults to **8** (or all available cores if fewer) to keep the host system responsive.
 *   `-d DEVICE`, `--device DEVICE`: Choose calculation device:
     *   `auto` (default): Runs on GPU if available and memory fits, falling back to CPU if GPU memory is insufficient.
     *   `cpu`: Forces CPU calculation (using multi-threaded PyTorch CPU or NumPy).

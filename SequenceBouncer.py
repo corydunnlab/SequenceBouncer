@@ -24,9 +24,9 @@ for i, arg in enumerate(sys.argv):
 
 if cores is None:
     try:
-        cores = max(1, os.cpu_count() - 4) if os.cpu_count() is not None else 1
+        cores = min(8, os.cpu_count()) if os.cpu_count() is not None else 8
     except Exception:
-        cores = 1
+        cores = 8
 
 # Set threads for BLAS libraries before numpy is loaded
 os.environ["OMP_NUM_THREADS"] = str(cores)
@@ -280,7 +280,7 @@ def compute_distances(
 
 
 if __name__ == "__main__":
-    default_cores = max(1, os.cpu_count() - 4) if os.cpu_count() is not None else 1
+    default_cores = min(8, os.cpu_count()) if os.cpu_count() is not None else 8
 
     ap = argparse.ArgumentParser()
     ap.add_argument(
@@ -352,7 +352,7 @@ if __name__ == "__main__":
         required=False,
         type=int,
         default=default_cores,
-        help="Number of CPU threads to use for calculations (default is available number minus 4).\n",
+        help="Number of CPU threads to use for calculations (default is 8, or all available cores if fewer).\n",
     )
     ap.add_argument(
         "-d",
